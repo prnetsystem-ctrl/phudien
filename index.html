@@ -57,27 +57,28 @@ th{color:var(--mu);font-weight:600;background:var(--bg)}
 th:first-child,td:first-child{text-align:left}
 tr.tot td{font-weight:700}
 
-/* CSS Tùy chỉnh cột Tab Công việc được giao */
-#tasks th:nth-child(5), #tasks td:nth-child(5) { width: 10%; }
-#tasks th:nth-child(6), #tasks td:nth-child(6) { white-space: nowrap; width: 12%; }
-#tasks th:nth-child(7), #tasks td:nth-child(7) { white-space: nowrap; width: 8%; text-align: center; }
-#tasks th:nth-child(8), #tasks td:nth-child(8) { width: 10%; text-align: center; }
-#tasks td.l{text-align:left; min-width:150px; max-width:400px; width: auto;}
+/* Tùy chỉnh cột Tab Công việc được giao */
+#tasks th:nth-child(5), #tasks td:nth-child(5) { width: 10%; } /* Nguồn */
+#tasks th:nth-child(6), #tasks td:nth-child(6) { white-space: nowrap; width: 1%; } /* Lãnh đạo */
+#tasks th:nth-child(7), #tasks td:nth-child(7) { white-space: nowrap; width: 1%; text-align: center; } /* Hạn */
+#tasks th:nth-child(8), #tasks td:nth-child(8) { width: 10%; text-align: center; } /* Trạng thái */
+#tasks th:nth-child(9), #tasks td:nth-child(9) { width: 5%; text-align: center; } /* Dòng */
+#tasks td.l{text-align:left; min-width:200px; width: auto;}
 
-/* CSS Tùy chỉnh cột Tab Cần xử lý - Ép Lãnh đạo không xuống dòng, thu hẹp Nội dung */
+/* Tùy chỉnh cột Tab Cần xử lý - Tăng Nội dung, Ép Lãnh đạo/Hạn không xuống dòng */
 #xlA th:nth-child(3), #xlA td:nth-child(3),
 #xlS th:nth-child(3), #xlS td:nth-child(3),
-#xlQ th:nth-child(3), #xlQ td:nth-child(3) { max-width: 180px; } /* Ép cột Nội dung nhỏ lại */
+#xlQ th:nth-child(3), #xlQ td:nth-child(3) { min-width: 300px; width: auto; } 
 
 #xlA th:nth-child(5), #xlA td:nth-child(5),
 #xlS th:nth-child(5), #xlS td:nth-child(5),
-#xlQ th:nth-child(5), #xlQ td:nth-child(5) { white-space: nowrap; width: auto; } /* Lãnh đạo không được xuống dòng */
+#xlQ th:nth-child(5), #xlQ td:nth-child(5) { white-space: nowrap; width: 1%; } 
 
 #xlA th:nth-child(6), #xlA td:nth-child(6),
 #xlS th:nth-child(6), #xlS td:nth-child(6),
-#xlQ th:nth-child(6), #xlQ td:nth-child(6) { white-space: nowrap; text-align: center; } /* Hạn không xuống dòng */
+#xlQ th:nth-child(6), #xlQ td:nth-child(6) { white-space: nowrap; width: 1%; text-align: center; } 
 
-#xlA td.l, #xlS td.l, #xlQ td.l { text-align:left; min-width: 100px; }
+#xlA td.l, #xlS td.l, #xlQ td.l { text-align:left; min-width: 150px; }
 
 .chart{display:flex;gap:12px;align-items:flex-end;height:170px;padding-top:8px}
 .col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end}
@@ -176,6 +177,7 @@ tr.tot td{font-weight:700}
 
 <section id="rp" class="hide">
   <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <!-- KHÔI PHỤC THẺ CHỌN TUẦN -->
     <label>Tuần <select id="week"></select></label>
     <span style="color:var(--mu);font-size:12px">Toàn phường · tháng lấy theo ô "Tháng" ở thanh trên · tuần theo cột "Tuần" trong Sổ</span>
     <button id="cp" style="margin-left:auto">Sao chép</button><button id="pr">In / Lưu PDF</button>
@@ -247,39 +249,54 @@ const normSt=s=>{s=(s||"").toLowerCase();return s.includes("quá hạn")?1:s.inc
 const normFlow=s=>{s=(s||"").toLowerCase();return s.includes("xlvb")?"XLVB":s.includes("kết luận")||s.includes("tkl")?"TKL":s.includes("ct")||s.includes("chương trình")?"CTCT":"CV"};
 const normSrc=s=>SRC.find(x=>x.toLowerCase()==(s||"").trim().toLowerCase())||"Các đơn vị khác";
 
+// Dò tìm thông minh (Smart Header Detect) 
 function rowsFromCSV(dept,csv){
   const rows = parseCSV(csv);
   if (!rows.length) return [];
   
   let headerRow = rows[0], headerIdx = 0;
-  for(let i=0; i<Math.min(15, rows.length); i++) {
-     let rowText = rows[i].join("").toLowerCase();
-     if(rowText.includes("trạng thái") && (rowText.includes("nội dung") || rowText.includes("công việc"))) {
+  let maxMatches = 0;
+  // Quét 10 dòng đầu tiên để tìm ra chính xác hàng Tiêu đề (phòng trường hợp các phòng ban merge dòng linh tinh)
+  for(let i=0; i<Math.min(10, rows.length); i++) {
+     let rowStr = rows[i].join("").toLowerCase();
+     let matches = 0;
+     if(rowStr.includes("trạng thái")) matches++;
+     if(rowStr.includes("nội dung") || rowStr.includes("công việc")) matches++;
+     if(rowStr.includes("lãnh đạo")) matches++;
+     if(rowStr.includes("tuần")) matches++;
+     if(matches > maxMatches) {
+         maxMatches = matches;
          headerRow = rows[i];
          headerIdx = i;
-         break;
      }
   }
   
   const findCol = (keywords, def) => {
+      // Ưu tiên 1: Tên cột phải chứa từ khóa rõ ràng, tránh bắt nhầm
       for (let j=0; j<headerRow.length; j++) {
           let h = String(headerRow[j]).toLowerCase();
-          for (let kw of keywords) if (h.includes(kw)) return j;
+          for (let kw of keywords) {
+              if (h.includes(kw)) {
+                  // Loại trừ bắt nhầm "số thứ tự" khi tìm cột "số văn bản"
+                  if (kw === "số" && h.includes("thứ tự")) continue;
+                  return j;
+              }
+          }
       }
       return def;
   };
 
-  // Cập nhật lại từ khóa dò tìm cột "Hạn" để không bị lấy nhầm Lãnh đạo
+  // Áp các từ khóa nhận diện CHÍNH XÁC cho cột Hạn và cột Văn bản
   const dC = {
       st: findCol(["trạng thái"], 1),
       mo: findCol(["tháng"], 4),
       wk: findCol(["tuần"], 5),
       tx: findCol(["nội dung", "ý kiến", "nhiệm vụ"], 6),
-      doc: findCol(["văn bản", "chỉ đạo", "ký hiệu"], 7),
+      doc: findCol(["số, ký hiệu", "số / ký hiệu", "số/ký hiệu", "số văn bản", "số cv", "ký hiệu"], 2), // Ép bắt chuẩn cột C (Số, ký hiệu)
       src: findCol(["nguồn"], 8),
       flow: findCol(["luồng"], 9),
       lead: findCol(["lãnh đạo"], 11),
-      due: findCol(["thời gian", "hạn", "thời hạn", "deadline", "mốc"], 12),
+      due: findCol(["hạn", "thời gian", "thời hạn", "deadline", "mốc"], 12), // Ép bắt chuẩn cột Hạn
       kq: findCol(["tiến độ", "kết quả"], 14),
       nh: findCol(["ngày ht", "ngày hoàn thành", "hoàn thành"], 15),
       ly: findCol(["lý do"], 16),
@@ -527,6 +544,14 @@ async function init(){
 el("dept").innerHTML='<option value="">Toàn phường (tất cả phòng)</option>'+DEPTS.map(d=>`<option>${d}</option>`).join("");
 for(let m=1;m<=12;m++)el("month").innerHTML+=`<option value="${m}">Tháng ${m}</option>`;
 ST.forEach((x,i)=>el("st").innerHTML+=`<option value="${i}">${x[0]}</option>`);
+
+// KHÔI PHỤC LẠI LIST TUẦN & NÚT IN/SAO CHÉP
+for(let i=1;i<=5;i++)el("week").innerHTML+=`<option value="${i}">Tuần ${i}</option>`;
+el("week").onchange=()=>{el("week").dataset.u="1";repW()};
+el("month").onchange=()=>{el("week").dataset.u="";render()};
+el("cp").onclick=async()=>{try{await navigator.clipboard.writeText(el("rpt").innerText);el("cp").textContent="Đã sao chép ✓"}catch(e){el("cp").textContent="Không sao chép được"}setTimeout(()=>el("cp").textContent="Sao chép",1800)};
+el("pr").onclick=()=>window.print();
+
 el("dept").onchange=render;el("st").onchange=tasks;el("q").oninput=tasks;el("reload").onclick=init;
 el("tabs").onclick=e=>{const t=e.target.dataset.t;if(!t)return;
  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b==e.target));
