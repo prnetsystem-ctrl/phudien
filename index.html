@@ -177,7 +177,6 @@ tr.tot td{font-weight:700}
 
 <section id="rp" class="hide">
   <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <!-- KHÔI PHỤC THẺ CHỌN TUẦN -->
     <label>Tuần <select id="week"></select></label>
     <span style="color:var(--mu);font-size:12px">Toàn phường · tháng lấy theo ô "Tháng" ở thanh trên · tuần theo cột "Tuần" trong Sổ</span>
     <button id="cp" style="margin-left:auto">Sao chép</button><button id="pr">In / Lưu PDF</button>
@@ -249,14 +248,12 @@ const normSt=s=>{s=(s||"").toLowerCase();return s.includes("quá hạn")?1:s.inc
 const normFlow=s=>{s=(s||"").toLowerCase();return s.includes("xlvb")?"XLVB":s.includes("kết luận")||s.includes("tkl")?"TKL":s.includes("ct")||s.includes("chương trình")?"CTCT":"CV"};
 const normSrc=s=>SRC.find(x=>x.toLowerCase()==(s||"").trim().toLowerCase())||"Các đơn vị khác";
 
-// Dò tìm thông minh (Smart Header Detect) 
 function rowsFromCSV(dept,csv){
   const rows = parseCSV(csv);
   if (!rows.length) return [];
   
   let headerRow = rows[0], headerIdx = 0;
   let maxMatches = 0;
-  // Quét 10 dòng đầu tiên để tìm ra chính xác hàng Tiêu đề (phòng trường hợp các phòng ban merge dòng linh tinh)
   for(let i=0; i<Math.min(10, rows.length); i++) {
      let rowStr = rows[i].join("").toLowerCase();
      let matches = 0;
@@ -272,13 +269,12 @@ function rowsFromCSV(dept,csv){
   }
   
   const findCol = (keywords, def) => {
-      // Ưu tiên 1: Tên cột phải chứa từ khóa rõ ràng, tránh bắt nhầm
       for (let j=0; j<headerRow.length; j++) {
-          let h = String(headerRow[j]).toLowerCase();
+          // Chuẩn hóa chuỗi bằng cách thay khoảng trắng thừa, xóa dấu cách ngắt (như \xa0) để bắt từ khóa 100%
+          let h = String(headerRow[j]).toLowerCase().replace(/\s+/g, ' ');
           for (let kw of keywords) {
               if (h.includes(kw)) {
-                  // Loại trừ bắt nhầm "số thứ tự" khi tìm cột "số văn bản"
-                  if (kw === "số" && h.includes("thứ tự")) continue;
+                  if (kw === "số" && h.includes("thứ tự")) continue; // Tránh bắt nhầm "số thứ tự"
                   return j;
               }
           }
@@ -286,19 +282,19 @@ function rowsFromCSV(dept,csv){
       return def;
   };
 
-  // Áp các từ khóa nhận diện CHÍNH XÁC cho cột Hạn và cột Văn bản
+  // Cập nhật lại từ khóa dò tìm chính xác cột Hạn và Văn bản chỉ đạo
   const dC = {
       st: findCol(["trạng thái"], 1),
       mo: findCol(["tháng"], 4),
       wk: findCol(["tuần"], 5),
       tx: findCol(["nội dung", "ý kiến", "nhiệm vụ"], 6),
-      doc: findCol(["số, ký hiệu", "số / ký hiệu", "số/ký hiệu", "số văn bản", "số cv", "ký hiệu"], 2), // Ép bắt chuẩn cột C (Số, ký hiệu)
+      doc: findCol(["công văn/văn bản", "số công văn", "số cv", "số văn bản", "số/ký hiệu", "ký hiệu"], 2), // Bắt chuẩn: Số Công văn/Văn bản
       src: findCol(["nguồn"], 8),
       flow: findCol(["luồng"], 9),
       lead: findCol(["lãnh đạo"], 11),
-      due: findCol(["hạn", "thời gian", "thời hạn", "deadline", "mốc"], 12), // Ép bắt chuẩn cột Hạn
+      due: findCol(["phải thực hiện xong", "hạn", "thời gian", "deadline", "mốc"], 12), // Bắt chuẩn: Ngày phải thực hiện xong
       kq: findCol(["tiến độ", "kết quả"], 14),
-      nh: findCol(["ngày ht", "ngày hoàn thành", "hoàn thành"], 15),
+      nh: findCol(["ngày ht", "hoàn thành"], 15),
       ly: findCol(["lý do"], 16),
       gc: findCol(["người", "thực hiện", "ghi chú"], 17)
   };
@@ -497,10 +493,12 @@ function repW(){
  updateStatus();
 }
 
-function lst(rs,id,empty){const n=rs.length;rs=rs.slice(0,200);
- el(id).innerHTML=`<tr><th>Phòng ban</th><th>Tháng/Tuần</th><th>Nội dung</th><th>Văn bản chỉ đạo</th><th>Lãnh đạo</th><th>Hạn</th><th>Tiến độ / kết quả</th><th>Lý do chưa hoàn thành</th><th>Người thực hiện</th><th>Dòng</th></tr>`+
- (rs.map(x=>`<tr><td>${esc(x.d)}</td><td>T${x.m}/Tuần ${x.w}</td><td class="l">${esc(x.tx||"(chưa nhập nội dung)")}</td><td class="l">${esc(x.doc)}</td><td>${esc(x.lead)}</td><td>${esc(x.due)}</td><td class="l">${esc(x.kq)}</td><td class="l">${esc(x.ly)}</td><td class="l">${esc(x.gc)}</td><td>${x.r||""}</td></tr>`).join("")||`<tr><td colspan="10" style="text-align:center;color:var(--mu)">${empty}</td></tr>`)+
- (n>200?`<tr><td colspan="10" style="text-align:center;color:var(--mu)">Hiển thị 200/${n} – hãy lọc theo phòng</td></tr>`:"")}
+function lst(rs,id,empty){
+ const n=rs.length; rs=rs.slice(0,200);
+ // Cập nhật: Đã xóa cột "Tiến độ/kết quả", bảng chỉ còn 9 cột
+ el(id).innerHTML=`<tr><th>Phòng ban</th><th>Tháng/Tuần</th><th>Nội dung</th><th>Văn bản chỉ đạo</th><th>Lãnh đạo</th><th>Hạn</th><th>Lý do chưa hoàn thành</th><th>Người thực hiện</th><th>Dòng</th></tr>`+
+ (rs.map(x=>`<tr><td>${esc(x.d)}</td><td>T${x.m}/Tuần ${x.w}</td><td class="l">${esc(x.tx||"(chưa nhập nội dung)")}</td><td class="l">${esc(x.doc)}</td><td>${esc(x.lead)}</td><td>${esc(x.due)}</td><td class="l">${esc(x.ly)}</td><td class="l">${esc(x.gc)}</td><td>${x.r||""}</td></tr>`).join("")||`<tr><td colspan="9" style="text-align:center;color:var(--mu)">${empty}</td></tr>`)+
+ (n>200?`<tr><td colspan="9" style="text-align:center;color:var(--mu)">Hiển thị 200/${n} – hãy lọc theo phòng</td></tr>`:"")}
 
 function xl(){
  const d=el("dept").value,m=+el("month").value,R=ROWS.filter(x=>(!d||x.d==d)&&x.m<=m),by=(a,b)=>(+pd(a.due)||1e15)-(+pd(b.due)||1e15),lim=+TODAY+7*DAY;
@@ -545,7 +543,6 @@ el("dept").innerHTML='<option value="">Toàn phường (tất cả phòng)</opti
 for(let m=1;m<=12;m++)el("month").innerHTML+=`<option value="${m}">Tháng ${m}</option>`;
 ST.forEach((x,i)=>el("st").innerHTML+=`<option value="${i}">${x[0]}</option>`);
 
-// KHÔI PHỤC LẠI LIST TUẦN & NÚT IN/SAO CHÉP
 for(let i=1;i<=5;i++)el("week").innerHTML+=`<option value="${i}">Tuần ${i}</option>`;
 el("week").onchange=()=>{el("week").dataset.u="1";repW()};
 el("month").onchange=()=>{el("week").dataset.u="";render()};
