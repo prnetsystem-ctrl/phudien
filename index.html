@@ -248,7 +248,7 @@ const normSt=s=>{s=(s||"").toLowerCase();return s.includes("quá hạn")?1:s.inc
 const normFlow=s=>{s=(s||"").toLowerCase();return s.includes("xlvb")?"XLVB":s.includes("kết luận")||s.includes("tkl")?"TKL":s.includes("ct")||s.includes("chương trình")?"CTCT":"CV"};
 const normSrc=s=>SRC.find(x=>x.toLowerCase()==(s||"").trim().toLowerCase())||"Các đơn vị khác";
 
-// Dò tìm thông minh: Quét TỪ KHÓA trước, Quét CỘT sau để ưu tiên bắt đúng 100% cột M (Hạn) và Cột C (Văn bản)
+// Dò tìm Cột Thông Minh: Khóa chặt vị trí Cột C và Cột M như yêu cầu
 function rowsFromCSV(dept,csv){
   const rows = parseCSV(csv);
   if (!rows.length) return [];
@@ -269,18 +269,24 @@ function rowsFromCSV(dept,csv){
      }
   }
   
-  // Nâng cấp: Chạy vòng lặp từ khóa TRƯỚC để ưu tiên bắt các từ khóa chính xác tuyệt đối (như "ngày phải thực hiện xong") trên tất cả các cột.
-  const findCol = (keywords, def) => {
+  const findCol = (keywords, expectedIndex) => {
+      // Ưu tiên 1: Quét cột đã được chỉ định (expectedIndex) trước để khoá cứng Index
+      let hExpected = String(headerRow[expectedIndex] || "").toLowerCase().replace(/\s+/g, ' ');
+      for (let kw of keywords) {
+          if (hExpected.includes(kw)) return expectedIndex;
+      }
+      
+      // Ưu tiên 2: Nếu bị chèn lệch, mới quét toàn bộ để tìm từ khóa
       for (let kw of keywords) {
           for (let j=0; j<headerRow.length; j++) {
-              let h = String(headerRow[j]).toLowerCase().replace(/\s+/g, ' '); // Chuẩn hóa khoảng trắng
+              let h = String(headerRow[j]).toLowerCase().replace(/\s+/g, ' ');
               if (h.includes(kw)) {
-                  if (kw === "số" && h.includes("thứ tự")) continue; 
+                  if (kw === "số" && h.includes("thứ tự")) continue;
                   return j;
               }
           }
       }
-      return def; // Trả về mặc định nếu không tìm thấy
+      return expectedIndex; // Fallback
   };
 
   const dC = {
@@ -288,13 +294,13 @@ function rowsFromCSV(dept,csv){
       mo: findCol(["tháng"], 4),
       wk: findCol(["tuần"], 5),
       tx: findCol(["nội dung", "ý kiến", "nhiệm vụ"], 6),
-      doc: findCol(["số, ký hiệu", "số / ký hiệu", "số/ký hiệu", "công văn/văn bản", "số công văn", "số cv", "số văn bản", "ký hiệu"], 2), // Ưu tiên số/ký hiệu (Cột C)
+      doc: findCol(["số công văn", "văn bản", "số cv", "số", "ký hiệu"], 2), // Index 2 = Cột C (Số Công văn/Văn bản)
       src: findCol(["nguồn"], 8),
       flow: findCol(["luồng"], 9),
       lead: findCol(["lãnh đạo"], 11),
-      due: findCol(["ngày phải thực hiện xong", "phải thực hiện xong", "thời hạn", "hạn xử lý", "deadline", "mốc"], 12), // Ưu tiên tuyệt đối cụm "Ngày phải thực hiện xong" (Cột M)
+      due: findCol(["phải thực hiện xong", "ngày phải thực hiện", "thời hạn", "hạn"], 12), // Index 12 = Cột M (Ngày phải thực hiện xong)
       kq: findCol(["tiến độ", "kết quả"], 14),
-      nh: findCol(["ngày ht", "ngày hoàn thành", "hoàn thành thực tế"], 15),
+      nh: findCol(["ngày ht", "hoàn thành thực tế"], 15),
       ly: findCol(["lý do"], 16),
       gc: findCol(["người", "thực hiện", "ghi chú"], 17)
   };
@@ -495,8 +501,9 @@ function repW(){
 
 function lst(rs,id,empty){
  const n=rs.length; rs=rs.slice(0,200);
+ // Cập nhật: Đã xóa cột "Tiến độ/kết quả" ở cả tiêu đề (th) và dữ liệu (td), bảng chỉ còn 9 cột
  el(id).innerHTML=`<tr><th>Phòng ban</th><th>Tháng/Tuần</th><th>Nội dung</th><th>Văn bản chỉ đạo</th><th>Lãnh đạo</th><th>Hạn</th><th>Lý do chưa hoàn thành</th><th>Người thực hiện</th><th>Dòng</th></tr>`+
- (rs.map(x=>`<tr><td>${esc(x.d)}</td><td>T${x.m}/Tuần ${x.w}</td><td class="l">${esc(x.tx||"(chưa nhập nội dung)")}</td><td class="l">${esc(x.doc)}</td><td>${esc(x.lead)}</td><td>${esc(x.due)}</td><td class="l">${esc(x.ly)}</td><td class="l">${esc(x.gc)}</td><td>${x.r||""}</td></tr>`).join("")||`<tr><td colspan="9" style="text-align:center;color:var(--mu)">${empty}</td></tr>`)+
+ (rs.map(x=>`<tr><td>${esc(x.d)}</td><td>T${x.m}/Tuần ${x.w}</td><td class="l">${esc(x.tx||"(chưa nhập nội dung)")}</td><td class="l">${esc(x.doc)}</td><td>${esc(x.lead)}</td><td style="text-align:center;">${esc(x.due)}</td><td class="l">${esc(x.ly)}</td><td class="l">${esc(x.gc)}</td><td style="text-align:center;">${x.r||""}</td></tr>`).join("")||`<tr><td colspan="9" style="text-align:center;color:var(--mu)">${empty}</td></tr>`)+
  (n>200?`<tr><td colspan="9" style="text-align:center;color:var(--mu)">Hiển thị 200/${n} – hãy lọc theo phòng</td></tr>`:"")}
 
 function xl(){
