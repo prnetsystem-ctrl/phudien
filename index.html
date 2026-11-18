@@ -56,11 +56,29 @@ th,td{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:right;white-s
 th{color:var(--mu);font-weight:600;background:var(--bg)}
 th:first-child,td:first-child{text-align:left}
 tr.tot td{font-weight:700}
+
+/* CSS Tùy chỉnh cột Tab Công việc được giao */
 #tasks th:nth-child(5), #tasks td:nth-child(5) { width: 10%; }
 #tasks th:nth-child(6), #tasks td:nth-child(6) { white-space: nowrap; width: 12%; }
 #tasks th:nth-child(7), #tasks td:nth-child(7) { white-space: nowrap; width: 8%; text-align: center; }
 #tasks th:nth-child(8), #tasks td:nth-child(8) { width: 10%; text-align: center; }
 #tasks td.l{text-align:left; min-width:150px; max-width:400px; width: auto;}
+
+/* CSS Tùy chỉnh cột Tab Cần xử lý - Ép Lãnh đạo không xuống dòng, thu hẹp Nội dung */
+#xlA th:nth-child(3), #xlA td:nth-child(3),
+#xlS th:nth-child(3), #xlS td:nth-child(3),
+#xlQ th:nth-child(3), #xlQ td:nth-child(3) { max-width: 180px; } /* Ép cột Nội dung nhỏ lại */
+
+#xlA th:nth-child(5), #xlA td:nth-child(5),
+#xlS th:nth-child(5), #xlS td:nth-child(5),
+#xlQ th:nth-child(5), #xlQ td:nth-child(5) { white-space: nowrap; width: auto; } /* Lãnh đạo không được xuống dòng */
+
+#xlA th:nth-child(6), #xlA td:nth-child(6),
+#xlS th:nth-child(6), #xlS td:nth-child(6),
+#xlQ th:nth-child(6), #xlQ td:nth-child(6) { white-space: nowrap; text-align: center; } /* Hạn không xuống dòng */
+
+#xlA td.l, #xlS td.l, #xlQ td.l { text-align:left; min-width: 100px; }
+
 .chart{display:flex;gap:12px;align-items:flex-end;height:170px;padding-top:8px}
 .col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end}
 .stack{width:100%;max-width:56px;display:flex;flex-direction:column-reverse;border-radius:4px 4px 0 0;overflow:hidden}
@@ -251,18 +269,19 @@ function rowsFromCSV(dept,csv){
       return def;
   };
 
+  // Cập nhật lại từ khóa dò tìm cột "Hạn" để không bị lấy nhầm Lãnh đạo
   const dC = {
       st: findCol(["trạng thái"], 1),
       mo: findCol(["tháng"], 4),
       wk: findCol(["tuần"], 5),
-      tx: findCol(["nội dung", "ý kiến"], 6),
+      tx: findCol(["nội dung", "ý kiến", "nhiệm vụ"], 6),
       doc: findCol(["văn bản", "chỉ đạo", "ký hiệu"], 7),
       src: findCol(["nguồn"], 8),
       flow: findCol(["luồng"], 9),
       lead: findCol(["lãnh đạo"], 11),
-      due: findCol(["thời hạn", "hạn"], 12),
+      due: findCol(["thời gian", "hạn", "thời hạn", "deadline", "mốc"], 12),
       kq: findCol(["tiến độ", "kết quả"], 14),
-      nh: findCol(["ngày ht", "ngày hoàn thành"], 15),
+      nh: findCol(["ngày ht", "ngày hoàn thành", "hoàn thành"], 15),
       ly: findCol(["lý do"], 16),
       gc: findCol(["người", "thực hiện", "ghi chú"], 17)
   };
