@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theo dõi công việc – UBND Phường Phú Diễn 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--tx:#1d2433;--mu:#667085;--bd:#e3e8ef;--pr:#1e4fa3;--ok:#2e9e5b;--late:#e08a00;--nd:#d6453d;--pe:#7a8599}
+@media (prefers-color-scheme:dark){:root{--bg:#12161f;--card:#1b2130;--tx:#e8ecf4;--mu:#97a1b5;--bd:#2c3446;--pr:#6f9bf0}}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx)}
+header{background:#1e4fa3;color:#fff;padding:14px 20px}
+header h1{margin:0;font-size:18px}header p{margin:2px 0 0;opacity:.85;font-size:12px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--bd); position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
+select,input,button{padding:7px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:inherit}
+button{cursor:pointer}
+.tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap;}
+.tabs button.on{background:var(--pr);color:#fff;border-color:var(--pr)}
+main{padding:16px 20px;max-width:1240px;margin:auto; position: relative; min-height: 60vh;}
+#loadingOverlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 120px;
+    z-index: 999;
+    text-align: center;
+}
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #e3e8ef;
+    border-top: 5px solid #1e4fa3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+#loadingOverlay h2 { color: #0d47a1; margin: 0 0 10px; font-size: 18px; font-weight: 600; }
+#loadingOverlay p { color: #667085; margin: 0; font-size: 14px; }
+.note{border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;background:#fff7e0;color:#6b5200;border:1px solid #f1dc9a}
+.note.ok{background:#e6f6ec;color:#1d5c37;border-color:#b6e2c5}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.k{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px;border-top:3px solid var(--c)}
+.k small{color:var(--mu)}.k b{display:block;font-size:24px}.k span{font-size:12px;color:var(--mu)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-bottom:14px;}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:14px}
+.sc{overflow-x:auto; max-width:100%;}
+table{border-collapse:collapse;width:100%;font-size:13px; table-layout:auto;}
+th,td{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:right;white-space:normal; word-wrap:break-word; vertical-align: top;}
+th{color:var(--mu);font-weight:600;background:var(--bg)}
+th:first-child,td:first-child{text-align:left}
+tr.tot td{font-weight:700}
+#tasks th:nth-child(5), #tasks td:nth-child(5) { width: 10%; }
+#tasks th:nth-child(6), #tasks td:nth-child(6) { white-space: nowrap; width: 12%; }
+#tasks th:nth-child(7), #tasks td:nth-child(7) { white-space: nowrap; width: 8%; text-align: center; }
+#tasks th:nth-child(8), #tasks td:nth-child(8) { width: 10%; text-align: center; }
+#tasks td.l{text-align:left; min-width:150px; max-width:400px; width: auto;}
+.chart{display:flex;gap:12px;align-items:flex-end;height:170px;padding-top:8px}
+.col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end}
+.stack{width:100%;max-width:56px;display:flex;flex-direction:column-reverse;border-radius:4px 4px 0 0;overflow:hidden}
+.stack i{display:block}
+.col small{color:var(--mu);margin-top:4px;font-size:11px}
+.leg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mu);margin-top:8px}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+.pb{height:8px;background:var(--bd);border-radius:4px;overflow:hidden;display:inline-block;width:70px;vertical-align:middle;margin-right:6px}
+.pb i{display:block;height:100%;background:var(--ok)}
+.tag{padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;background:var(--c);white-space:nowrap;}
+.hide{display:none !important;}
+.doc{background:#fff;color:#111;border:1px solid var(--bd);border-radius:10px;padding:28px 36px;font:14pt/1.5 "Times New Roman",serif;max-width:860px;margin:auto}
+.doc h4{text-align:center;margin:14px 0 4px;font-size:14pt;font-weight:bold;}
+.doc .hd{display:flex;justify-content:space-between;text-align:center;font-size:13pt;gap:12px}
+.doc p{margin:6px 0; text-align:justify;}
+.doc .ind{margin-left:22px}
+.doc .ind2{margin-left:44px;font-size:14pt;color:#333}
+.doc .sg{display:flex;justify-content:space-between;margin-top:18px;font-size:14pt}
+.chip{display:inline-block;padding:2px 10px;border-radius:12px;background:var(--bg);margin:0 6px 6px 0;font-size:12px}
+.status-bar {margin-bottom:15px; padding:8px 15px; background-color:#fff3e0; border-left:4px solid #ff9800; border-radius:4px; font-size:13px; color:#333; display:flex; align-items:center;}
+.status-bar span.dot {color:#ff9800; font-size:16px; margin-right:8px; line-height:1;}
+.chart-container { position: relative; height: 300px; width: 100%; }
+@media print{body *{visibility:hidden}#rpt,#rpt *{visibility:visible;display:block !important;}#rpt{position:absolute;left:0;top:0;width:100%;border:0}}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Sổ theo dõi tiến độ công việc – UBND Phường Phú Diễn 2026</h1>
+    <p>Dữ liệu được lấy trực tiếp từ Sổ theo dõi tiến độ công việc của UBND Phường Phú Diễn năm 2026</p>
+</header>
+<div class="bar">
+  <label>Phòng ban <select id="dept"></select></label>
+  <label>Tháng <select id="month"></select></label>
+  <button id="reload" title="Tải lại dữ liệu từ Sheet">↻ Tải lại</button>
+  <div class="tabs" id="tabs">
+    <button data-t="ov" class="on">Tổng quan</button>
+    <button data-t="tk">Công việc được giao</button>
+    <button data-t="lk">Luỹ kế năm</button>
+    <button data-t="rp">Báo cáo tuần tự động</button>
+    <button data-t="xl">Cần xử lý</button>
+  </div>
+</div>
+
+<main>
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+    <h2>Đang kết nối để tải dữ liệu, vui lòng đợi vài giây...</h2>
+    <p>(Lần tải đầu tiên trong ngày sẽ mất khoảng 3 - 5 giây)</p>
+</div>
+<div id="msg" class="note hide"></div>
+<div id="statusBar" class="status-bar hide">
+  <span class="dot">●</span>
+  <span id="statusText"></span>
+</div>
+
+<section id="ov">
+  <div class="kpis" id="kpis"></div>
+  <div class="grid">
+    <div class="card"><h3>Công việc theo tuần</h3><div class="chart" id="chart"></div>
+      <div class="leg" id="leg"></div></div>
+    <div class="card"><h3>Kết quả công việc trong tháng</h3><div class="sc"><table id="wk"></table></div></div>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>Theo nguồn giao việc (tháng)</h3><div class="sc"><table id="src"></table></div></div>
+    <div class="card"><h3>Theo loại luồng (tháng)</h3><div class="sc"><table id="flow"></table></div></div>
+  </div>
+  <div class="card"><h3>So sánh các phòng: tháng và luỹ kế từ đầu năm</h3><div class="sc"><table id="cmp"></table></div></div>
+</section>
+
+<section id="tk" class="hide">
+  <div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <select id="st"><option value="">Tất cả trạng thái</option></select>
+      <input id="q" placeholder="Tìm nội dung, văn bản, lãnh đạo…" style="flex:1;min-width:200px">
+    </div>
+    <div class="sc"><table id="tasks"></table></div>
+  </div>
+</section>
+
+<section id="lk" class="hide">
+  <div class="kpis" id="kpis2"></div>
+  <div class="grid">
+    <div class="card">
+      <h3 id="lkTrendTitle">Xu hướng tiến độ công việc theo tháng</h3>
+      <div class="chart-container"><canvas id="trendChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3 id="lkDeptTitle">Số lượng công việc các phòng ban (Lũy kế)</h3>
+      <div class="chart-container"><canvas id="deptChart"></canvas></div>
+    </div>
+  </div>
+  <div class="card"><h3 id="lkTableTitle">Tổng hợp theo tháng và luỹ kế</h3><div class="sc"><table id="mtab"></table></div></div>
+</section>
+
+<section id="rp" class="hide">
+  <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <label>Tuần <select id="week"></select></label>
+    <span style="color:var(--mu);font-size:12px">Toàn phường · tháng lấy theo ô "Tháng" ở thanh trên · tuần theo cột "Tuần" trong Sổ</span>
+    <button id="cp" style="margin-left:auto">Sao chép</button><button id="pr">In / Lưu PDF</button>
+  </div>
+  <div class="doc" id="rpt"></div>
+</section>
+
+<section id="xl" class="hide">
+  <div class="card"><h3 id="xlAh"></h3><div id="xlchips"></div><div class="sc"><table id="xlA"></table></div></div>
+  <div class="card"><h3 id="xlSh"></h3><div class="sc"><table id="xlS"></table></div></div>
+  <div class="card"><h3 id="xlQh"></h3><div class="sc"><table id="xlQ"></table></div></div>
+</section>
+</main>
+
+<script>
+const SHEET_ID="10vl4JuyRYwhOmWMa2Ddp-RBO48NWF4oWC84g73_QyvU";
+
+const TABS=[
+  ["Phòng HT-ĐT-MT", "1. Phòng HT-ĐT-MT"],
+  ["Phòng VH-XH", "2. Phòng VH-XH"],
+  ["VP HĐND-UBND", "3. VP HĐND-UBND"],
+  ["Ban QL dự án", "4. Ban QL dự án"],
+  ["Ban CHQS", "5. Ban CHQS"],
+  ["CAP", "6. CAP"],
+  ["HCC", "7. HCC"],
+  ["Trạm Y tế", "8. Trạm Y tế"],
+  ["TT VH", "9. TT VH"],
+  ["Phòng Kinh tế", "10. Phòng Kinh tế"],
+  ["Phòng Nội vụ - Tư pháp", "11. Phòng Nội vụ - Tư pháp"]
+];
+const ST=[["Hoàn thành","var(--ok)"],["Hoàn thành quá hạn","var(--late)"],["Chưa hoàn thành","var(--nd)"],["Đang chờ xử lý","var(--pe)"]];
+const SRC=["Sở, ban, ngành","Thành phố","Thành uỷ","Trung ương","Đảng uỷ","Các đơn vị khác"];
+const FLOW=[["CV","Công văn"],["XLVB","Phiếu XLVB"],["TKL","Theo kết luận"],["CTCT","CT công tác"]];
+const DEPTS=TABS.map(t=>t[0]);
+let ROWS=[],DATA={};
+
+const el=id=>document.getElementById(id);
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const pct=(a,b)=>b?(a/b*100).toFixed(1).replace(".",",")+"%":"0,0%";
+const esc=s=>String(s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])).replace(/\n/g, '<br>');
+
+function updateStatus() {
+    const d = el("dept").value;
+    const m = el("month").value;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('vi-VN') + ' ' + now.toLocaleDateString('vi-VN');
+    const tabBtn = document.querySelector('.tabs button.on');
+    const tabCode = tabBtn ? tabBtn.dataset.t : '';
+    let text = "";
+    const deptName = d || 'Toàn phường';
+    if (tabCode === 'ov') text = `Đang xem: <b>${deptName}</b> · trong <b>tháng ${m}</b> · Cập nhật lúc: ${timeStr}`;
+    else if (tabCode === 'lk') text = `Đang xem: <b>${deptName}</b> · luỹ kế tới <b>tháng ${m}</b> · Cập nhật lúc: ${timeStr}`;
+    else text = `Đang xem: <b>${deptName}</b> · ${tabBtn ? tabBtn.innerText : ''} · Cập nhật lúc: ${timeStr}`;
+    el("statusText").innerHTML = text;
+    el("statusBar").classList.remove("hide");
+}
+
+function parseCSV(t){
+ const R=[];let r=[],f="",q=false;
+ for(let i=0;i<t.length;i++){
+  const c=t[i];
+  if(q){if(c=='"'){if(t[i+1]=='"'){f+='"';i++}else q=false}else f+=c}
+  else if(c=='"')q=true;else if(c==","){r.push(f);f=""}
+  else if(c=="\n"){r.push(f);R.push(r);r=[];f=""}else if(c!="\r")f+=c
+ }
+ if(f||r.length){r.push(f);R.push(r)}return R
+}
+const normSt=s=>{s=(s||"").toLowerCase();return s.includes("quá hạn")?1:s.includes("chưa")?2:s.includes("chờ")?3:s.includes("hoàn thành")?0:-1};
+const normFlow=s=>{s=(s||"").toLowerCase();return s.includes("xlvb")?"XLVB":s.includes("kết luận")||s.includes("tkl")?"TKL":s.includes("ct")||s.includes("chương trình")?"CTCT":"CV"};
+const normSrc=s=>SRC.find(x=>x.toLowerCase()==(s||"").trim().toLowerCase())||"Các đơn vị khác";
+
+function rowsFromCSV(dept,csv){
+  const rows = parseCSV(csv);
+  if (!rows.length) return [];
+  
+  let headerRow = rows[0], headerIdx = 0;
+  for(let i=0; i<Math.min(15, rows.length); i++) {
+     let rowText = rows[i].join("").toLowerCase();
+     if(rowText.includes("trạng thái") && (rowText.includes("nội dung") || rowText.includes("công việc"))) {
+         headerRow = rows[i];
+         headerIdx = i;
+         break;
+     }
+  }
+  
+  const findCol = (keywords, def) => {
+      for (let j=0; j<headerRow.length; j++) {
+          let h = String(headerRow[j]).toLowerCase();
+          for (let kw of keywords) if (h.includes(kw)) return j;
+      }
+      return def;
+  };
+
+  const dC = {
+      st: findCol(["trạng thái"], 1),
+      mo: findCol(["tháng"], 4),
+      wk: findCol(["tuần"], 5),
+      tx: findCol(["nội dung", "ý kiến"], 6),
+      doc: findCol(["văn bản", "chỉ đạo", "ký hiệu"], 7),
+      src: findCol(["nguồn"], 8),
+      flow: findCol(["luồng"], 9),
+      lead: findCol(["lãnh đạo"], 11),
+      due: findCol(["thời hạn", "hạn"], 12),
+      kq: findCol(["tiến độ", "kết quả"], 14),
+      nh: findCol(["ngày ht", "ngày hoàn thành"], 15),
+      ly: findCol(["lý do"], 16),
+      gc: findCol(["người", "thực hiện", "ghi chú"], 17)
+  };
+  
+  const out = [];
+  rows.forEach((r, i) => {
+      if (i <= headerIdx) return;
+      const moStr = String(r[dC.mo] || "").trim();
+      let moMatch = /tháng\s*(\d+)/i.exec(moStr);
+      if (!moMatch && /^\d{1,2}$/.test(moStr)) moMatch = [moStr, moStr];
+      const st = normSt(r[dC.st]);
+      const tx = String(r[dC.tx] || "").trim();
+      
+      if (!moMatch || st < 0 || tx.length < 2) return;
+      const wkStr = String(r[dC.wk] || "").trim();
+      let wkMatch = /(\d+)/.exec(wkStr);
+      const w = Math.min(5, Math.max(1, wkMatch ? parseInt(wkMatch[1]) : 1));
+      out.push({
+          r: i + 1, d: dept, m: parseInt(moMatch[1]), w: w, st: st, 
+          tx: tx, doc: r[dC.doc], src: normSrc(r[dC.src]), fl: normFlow(r[dC.flow]), 
+          lead: r[dC.lead], due: r[dC.due], kq: r[dC.kq], nh: r[dC.nh], ly: r[dC.ly], gc: r[dC.gc]
+      });
+  });
+  return out;
+}
+
+async function loadLive(){
+ const fails=[]; let all=[];
+ await Promise.all(TABS.map(async([name,tab])=>{
+  try{
+   const u=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&headers=0&sheet=${encodeURIComponent(tab)}`;
+   const res=await fetch(u);
+   if(!res.ok) throw 0;
+   const text = await res.text();
+   if(text.toLowerCase().includes("<!doctype html>")) throw 0;
+   const rows=rowsFromCSV(name, text);
+   if(!rows.length) throw 0;
+   all=all.concat(rows);
+  }catch(e){
+   fails.push(name);
+  }
+ }));
+ return {all, fails};
+}
+
+function build(){
+ DATA={};
+ for(let m=1;m<=12;m++){DATA[m]={};DEPTS.forEach(d=>DATA[m][d]=[0,1,2,3,4].map(()=>[0,0,0,0]))}
+ ROWS.forEach(x=>{if(DATA[x.m]&&DATA[x.m][x.d])DATA[x.m][x.d][x.w-1][x.st]++});
+}
+function agg(m,d){
+ const o=[0,0,0,0],wk=[0,1,2,3,4].map(()=>[0,0,0,0]);
+ (d?[d]:DEPTS).forEach(k=>DATA[m][k].forEach((w,i)=>w.forEach((v,j)=>{o[j]+=v;wk[i][j]+=v})));
+ return{o,wk};
+}
+function ytd(upTo,d){
+ const o=[0,0,0,0];for(let m=1;m<=upTo;m++)agg(m,d).o.forEach((v,j)=>o[j]+=v);return o;
+}
+
+function kpi(o,lbl){const t=sum(o);return`<div class="k" style="--c:var(--pr)"><small>Tổng công việc ${lbl}</small><b>${t}</b><span>Thực tế (trừ chờ xử lý): ${t-o[3]} · ${pct(t-o[3],t)}</span></div>`+
+ ST.map((x,i)=>`<div class="k" style="--c:${x[1]}"><small>${x[0]}</small><b>${o[i]}</b><span>${pct(o[i],t)}</span></div>`).join("")}
+
+function breakdown(id,keys,get,m,d){
+ const rs=ROWS.filter(x=>x.m==m&&(!d||x.d==d));
+ el(id).innerHTML=`<tr><th></th><th>Tổng</th>${ST.map(x=>`<th>${x[0]}</th>`).join("")}</tr>`+
+ keys.map(([k,l])=>{const a=[0,0,0,0];rs.filter(x=>get(x)==k).forEach(x=>a[x.st]++);return`<tr><td class="l">${l}</td><td>${sum(a)}</td>${a.map(v=>`<td>${v}</td>`).join("")}</tr>`}).join("")}
+
+let trendChartInst = null, deptChartInst = null;
+function renderCharts(m, d) {
+  if (typeof Chart === 'undefined') {
+      console.warn("Thư viện Chart.js bị trình duyệt chặn hoặc mất mạng.");
+      return;
+  }
+  const labels = Array.from({length: m}, (_, i) => 'T' + (i + 1));
+  const trendDataTotal = [], trendDataDone = [];
+  for(let i=1; i<=m; i++){
+      let a = agg(i, d).o; trendDataTotal.push(sum(a)); trendDataDone.push(a[0]);
+  }
+  const deptNameTitle = d || 'Toàn phường';
+  el("lkTrendTitle").innerText = `Xu hướng tiến độ công việc theo tháng (${deptNameTitle})`;
+  el("lkTableTitle").innerText = `Tổng hợp theo tháng và luỹ kế (${deptNameTitle})`;
+
+  if(trendChartInst) trendChartInst.destroy();
+  const ctxTrend = document.getElementById('trendChart');
+  if(ctxTrend) {
+      trendChartInst = new Chart(ctxTrend, {
+          type: 'line',
+          data: { labels: labels, datasets: [
+                  { label: 'Tổng nhiệm vụ', data: trendDataTotal, borderColor: '#1e4fa3', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2 },
+                  { label: 'Hoàn thành', data: trendDataDone, borderColor: '#2e9e5b', backgroundColor: 'transparent', tension: 0.3, borderWidth: 2 }
+              ] },
+          options: { maintainAspectRatio: false }
+      });
+  }
+  const deptLabels = DEPTS;
+  const deptData = DEPTS.map(k => sum(ytd(m, k)));
+  const backgroundColors = DEPTS.map(k => (k === d) ? '#e08a00' : '#6f9bf0');
+
+  if(deptChartInst) deptChartInst.destroy();
+  const ctxDept = document.getElementById('deptChart');
+  if(ctxDept) {
+      deptChartInst = new Chart(ctxDept, {
+          type: 'bar',
+          data: { labels: deptLabels, datasets: [{ label: 'Số lượng công việc', data: deptData, backgroundColor: backgroundColors, borderRadius: 4 }] },
+          options: { maintainAspectRatio: false, indexAxis: 'y' }
+      });
+  }
+}
+
+function render(){
+ const d=el("dept").value,m=+el("month").value,{o,wk}=agg(m,d),t=sum(o);
+ el("kpis").innerHTML=kpi(o,"tháng "+m);
+ const mx=Math.max(1,...wk.map(sum));
+ el("chart").innerHTML=wk.map((w,i)=>`<div class="col"><div class="stack" style="height:${sum(w)/mx*130}px">${w.map((v,j)=>`<i style="height:${sum(w)?v/sum(w)*100:0}%;background:${ST[j][1]}"></i>`).join("")}</div><small>T${i+1} · ${sum(w)}</small></div>`).join("");
+ el("leg").innerHTML=ST.map(x=>`<span><i style="background:${x[1]}"></i>${x[0]}</span>`).join("");
+ el("wk").innerHTML=`<tr><th>Kết quả</th>${[1,2,3,4,5].map(i=>`<th>Tuần ${i}</th>`).join("")}<th>Tổng</th><th>Tỷ lệ</th></tr>`+
+ ST.map((x,j)=>`<tr><td class="l">${x[0]}</td>${wk.map(w=>`<td>${w[j]}</td>`).join("")}<td>${o[j]}</td><td>${pct(o[j],t)}</td></tr>`).join("")+
+ `<tr class="tot"><td class="l">Tổng</td>${wk.map(w=>`<td>${sum(w)}</td>`).join("")}<td>${t}</td><td></td></tr>`+
+ `<tr class="tot"><td class="l">Tổng thực tế</td>${wk.map(w=>`<td>${sum(w)-w[3]}</td>`).join("")}<td>${t-o[3]}</td><td>${pct(t-o[3],t)}</td></tr>`;
+ breakdown("src",SRC.map(x=>[x,x]),x=>x.src,m,d);
+ breakdown("flow",FLOW,x=>x.fl,m,d);
+ el("cmp").innerHTML=`<tr><th>Phòng ban</th><th>Tổng tháng</th><th>Hoàn thành</th><th>Quá hạn</th><th>Chưa HT</th><th>Chờ xử lý</th><th>% HT tháng</th><th>Luỹ kế tổng</th><th>Luỹ kế HT</th><th>% HT luỹ kế</th></tr>`+
+ DEPTS.map(k=>{const a=agg(m,k).o,y=ytd(m,k),ta=sum(a),ty=sum(y);
+ return`<tr${d==k?' style="background:var(--bg)"':''}><td>${k}</td><td>${ta}</td><td>${a[0]}</td><td>${a[1]}</td><td>${a[2]}</td><td>${a[3]}</td><td><span class="pb"><i style="width:${ta?a[0]/ta*100:0}%"></i></span>${pct(a[0],ta)}</td><td>${ty}</td><td>${y[0]}</td><td><span class="pb"><i style="width:${ty?y[0]/ty*100:0}%"></i></span>${pct(y[0],ty)}</td></tr>`}).join("");
+ el("kpis2").innerHTML=kpi(ytd(m,d),"luỹ kế T1–T"+m);
+ let c=[0,0,0,0],h=`<tr><th>Tháng</th><th>Tổng</th><th>Hoàn thành</th><th>Quá hạn</th><th>Chưa HT</th><th>Chờ xử lý</th><th>% HT</th><th>Luỹ kế tổng</th><th>Luỹ kế HT</th><th>% HT luỹ kế</th></tr>`;
+ for(let i=1;i<=m;i++){const a=agg(i,d).o;c=c.map((v,j)=>v+a[j]);const ta=sum(a),tc=sum(c);
+  h+=`<tr${i==m?' class="tot"':''}><td>Tháng ${i}</td><td>${ta}</td><td>${a[0]}</td><td>${a[1]}</td><td>${a[2]}</td><td>${a[3]}</td><td>${pct(a[0],ta)}</td><td>${tc}</td><td>${c[0]}</td><td>${pct(c[0],tc)}</td></tr>`}
+ el("mtab").innerHTML=h;
+ renderCharts(m, d);
+ tasks();repW();xl();
+ updateStatus();
+}
+
+function tasks(){
+ const d=el("dept").value,m=+el("month").value,s=el("st").value,q=el("q").value.toLowerCase();
+ const col=ST.map(x=>x[1]);
+ const rs=ROWS.filter(x=>x.m==m&&(!d||x.d==d)&&(s===""||x.st==s)&&(!q||((x.tx||"")+(x.doc||"")+(x.lead||"")).toLowerCase().includes(q)));
+ el("tasks").innerHTML=`<tr><th>Phòng ban</th><th>Tuần</th><th>Nội dung / nhiệm vụ</th><th>Văn bản / chỉ đạo</th><th>Nguồn</th><th>Lãnh đạo</th><th>Hạn</th><th>Trạng thái</th><th>Dòng</th></tr>`+
+ (rs.slice(0,300).map(x=>`<tr><td>${esc(x.d)}</td><td>${x.w}</td><td class="l">${esc(x.tx||"(chưa nhập nội dung)")}</td><td class="l">${esc(x.doc)}</td><td>${esc(x.src)}</td><td>${esc(x.lead)}</td><td style="text-align:center;">${esc(x.due)}</td><td style="text-align:center;"><span class="tag" style="--c:${col[x.st]}">${ST[x.st][0]}</span></td><td style="text-align:center;">${x.r||""}</td></tr>`).join("")||`<tr><td colspan="9" style="text-align:center;color:var(--mu)">Không có công việc phù hợp</td></tr>`)+
+ (rs.length>300?`<tr><td colspan="9" style="text-align:center;color:var(--mu)">Hiển thị 300/${rs.length} công việc – hãy lọc thêm</td></tr>`:"");
+ updateStatus();
+}
+
+const YEAR=2026,DAY=864e5,TODAY=new Date(new Date().setHours(0,0,0,0));
+const yr=s=>{const m=/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(s||"");return m?(+m[3]<100?+m[3]+2000:+m[3]):0};
+const pd=s=>{const m=/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(s||"");return m?new Date(Math.max(yr(s),YEAR),m[2]-1,m[1]):null};
+function calc(d,m,w){const a=ROWS.filter(x=>x.d==d&&x.m==m&&x.w<=w),o=ROWS.filter(x=>x.d==d&&x.m<m&&x.st>=2),s=[0,0,0,0];
+ a.concat(o).forEach(x=>s[x.st]++);return{n:a.length,o:o.length,t:a.length+o.length,hd:s[0]+s[1],nd:s[2],pe:s[3],nw:ROWS.filter(x=>x.d==d&&x.m==m&&x.w==w).length}}
+
+function repW(){
+ const m=+el("month").value,ws=el("week");
+ if(ws.dataset.u!="1")ws.value=Math.max(1,...ROWS.filter(x=>x.m==m).map(x=>x.w));
+ const w=+ws.value,C=DEPTS.map(d=>({d,...calc(d,m,w)})),T={n:0,o:0,t:0,hd:0,nd:0,pe:0,nw:0};
+ C.forEach(c=>{for(const k in T)T[k]+=c[k]});
+ const L=c=>`<p class="ind">+ Đã hoàn thành: ${c.hd} nhiệm vụ (đạt tỷ lệ ${pct(c.hd,c.t)})</p><p class="ind">+ Chưa hoàn thành (quá hạn chưa giải quyết): ${c.nd} nhiệm vụ</p><p class="ind">+ Đang tiếp tục xử lý (trong hạn): ${c.pe} nhiệm vụ</p>`;
+ const act=C.filter(c=>c.t>0),low=act.slice().sort((a,b)=>a.hd/a.t-b.hd/b.t)[0],full=act.filter(c=>c.hd==c.t).map(c=>c.d);
+ let nx=[`Trong tuần ${w} có ${T.nw} nhiệm vụ mới được giao cho các phòng chuyên môn, đơn vị.`];
+ if(w>1){let ph=0,pt=0;DEPTS.forEach(d=>{const c=calc(d,m,w-1);ph+=c.hd;pt+=c.t});
+  if(pt){const df=(T.hd/T.t-ph/pt)*100;nx.push(`Tỷ lệ hoàn thành chung đạt ${pct(T.hd,T.t)}, ${Math.abs(df)<.05?"không đổi":(df>0?"tăng ":"giảm ")+Math.abs(df).toFixed(1).replace(".",",")+" điểm phần trăm"} so với tuần ${w-1}.`)}}
+ else nx.push(`Tỷ lệ hoàn thành chung đạt ${pct(T.hd,T.t)}.`);
+ if(low&&low.hd<low.t)nx.push(`Đơn vị có tỷ lệ hoàn thành thấp nhất: ${low.d} (${pct(low.hd,low.t)}, còn ${low.nd} nhiệm vụ chưa hoàn thành, ${low.pe} đang xử lý).`);
+ if(full.length)nx.push(`Đơn vị hoàn thành 100% nhiệm vụ: ${full.join(", ")}.`);
+  
+  el("rpt").innerHTML=`
+  <div class="hd" style="align-items:flex-start;">
+    <div style="width: 40%; text-align: center;">
+      <span style="font-size: 13pt;">UBND PHƯỜNG PHÚ DIỄN</span><br>
+      <strong style="font-size: 13pt; text-decoration: underline;">VĂN PHÒNG HĐND - UBND</strong><br>
+      <span style="font-size: 13pt;">Số: &nbsp;&nbsp;&nbsp;/BC-UBND</span>
+    </div>
+    <div style="width: 60%; text-align: center;">
+      <strong style="font-size: 13pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</strong><br>
+      <strong style="font-size: 14pt; text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</strong><br>
+      <i style="font-size: 13pt;">Phú Diễn, ngày ${TODAY.getDate()} tháng ${TODAY.getMonth()+1} năm ${TODAY.getFullYear()}</i>
+    </div>
+  </div>
+  <h4 style="font-size:14pt; margin: 25px 0 10px;">BÁO CÁO</h4>
+  <p style="text-align:center; font-weight:bold; font-size:14pt; margin-top:0;">Tiến độ thực hiện nhiệm vụ được giao của các phòng chuyên môn, đơn vị thuộc UBND Phường tới tuần ${w}, tháng ${m}/${YEAR}</p>
+  <p>Thực hiện chỉ đạo của Chủ tịch UBND Phường tại các kết luận cuộc họp và văn bản chỉ đạo của các Sở, Ban, Ngành chuyển đến UBND Phường, Văn phòng HĐND-UBND Phường báo cáo tiến độ thực hiện như sau:</p>
+  <p><b>I. Kết quả thực hiện nhiệm vụ của các phòng chuyên môn, đơn vị</b></p>
+  <p><b>1. Kết quả chung của toàn phường:</b></p>
+  <p class="ind">- Nhiệm vụ phải thực hiện tới tuần ${w}, tháng ${m}/${YEAR} (gồm ${T.n} nhiệm vụ trong tháng và ${T.o} nhiệm vụ tồn đọng của các tháng trước). Tổng ${T.t} nhiệm vụ. Cụ thể:</p>${L(T)}
+  <p><b>2. Kết quả thực hiện của từng phòng chuyên môn, đơn vị:</b></p>
+  ${act.map((c,i)=>`<p>${i+1}. <b>${esc(c.d)}</b> tới tuần ${w}/tháng ${m}: ${c.n} nhiệm vụ; ${c.o} nhiệm vụ tồn đọng của các tháng trước. Tổng cộng: ${c.t} nhiệm vụ. Trong đó:</p>${L(c)}`).join("")||"<p>Chưa có dữ liệu.</p>"}
+  ${C.filter(c=>!c.t).length?`<p class="ind">Không phát sinh nhiệm vụ: ${C.filter(c=>!c.t).map(c=>esc(c.d)).join(", ")}.</p>`:""}
+  <p><b>II. Nhận xét</b></p>${nx.map(s=>`<p class="ind">- ${s}</p>`).join("")}
+  <div class="sg" style="display:flex; justify-content:space-between; margin-top:30px;">
+    <div style="width:50%; font-size:11pt; font-style:italic; line-height:1.3; text-align:left;">
+      <b>Nơi nhận:</b><br>- TT Đảng uỷ phường (để b/c);<br>- Đ/c Chủ tịch, các PCT UBND Phường;<br>- Các phòng chuyên môn, đơn vị;<br>- Lưu: VT.
+    </div>
+    <div style="width:50%; text-align:center; font-size:13pt;">
+      <b>CHÁNH VĂN PHÒNG</b><br><br><br><br><br><b>(Đã ký)</b>
+    </div>
+  </div>`;
+ updateStatus();
+}
+
+function lst(rs,id,empty){const n=rs.length;rs=rs.slice(0,200);
+ el(id).innerHTML=`<tr><th>Phòng ban</th><th>Tháng/Tuần</th><th>Nội dung</th><th>Văn bản chỉ đạo</th><th>Lãnh đạo</th><th>Hạn</th><th>Tiến độ / kết quả</th><th>Lý do chưa hoàn thành</th><th>Người thực hiện</th><th>Dòng</th></tr>`+
+ (rs.map(x=>`<tr><td>${esc(x.d)}</td><td>T${x.m}/Tuần ${x.w}</td><td class="l">${esc(x.tx||"(chưa nhập nội dung)")}</td><td class="l">${esc(x.doc)}</td><td>${esc(x.lead)}</td><td>${esc(x.due)}</td><td class="l">${esc(x.kq)}</td><td class="l">${esc(x.ly)}</td><td class="l">${esc(x.gc)}</td><td>${x.r||""}</td></tr>`).join("")||`<tr><td colspan="10" style="text-align:center;color:var(--mu)">${empty}</td></tr>`)+
+ (n>200?`<tr><td colspan="10" style="text-align:center;color:var(--mu)">Hiển thị 200/${n} – hãy lọc theo phòng</td></tr>`:"")}
+
+function xl(){
+ const d=el("dept").value,m=+el("month").value,R=ROWS.filter(x=>(!d||x.d==d)&&x.m<=m),by=(a,b)=>(+pd(a.due)||1e15)-(+pd(b.due)||1e15),lim=+TODAY+7*DAY;
+ const A=R.filter(x=>x.st==2).sort(by),S=R.filter(x=>x.st==3&&pd(x.due)&&+pd(x.due)>=+TODAY&&+pd(x.due)<=lim).sort(by),Q=R.filter(x=>x.st==3&&pd(x.due)&&+pd(x.due)<+TODAY).sort(by);
+ el("xlAh").textContent=`Chưa hoàn thành (quá hạn chưa giải quyết) – ${A.length} nhiệm vụ`;
+ el("xlchips").innerHTML=DEPTS.map(k=>[k,A.filter(x=>x.d==k).length]).filter(c=>c[1]).map(c=>`<span class="chip">${esc(c[0])}: <b>${c[1]}</b></span>`).join("");
+ el("xlSh").textContent=`Đang xử lý, đến hạn trong 7 ngày tới – ${S.length} nhiệm vụ`;
+ el("xlQh").textContent=`Đang xử lý nhưng đã quá ngày hạn (cần cập nhật trạng thái) – ${Q.length} nhiệm vụ`;
+ lst(A,"xlA","Không có nhiệm vụ nào");lst(S,"xlS","Không có nhiệm vụ nào đến hạn trong 7 ngày tới");lst(Q,"xlQ","Không có")
+ updateStatus();
+}
+
+async function init(){
+ el("loadingOverlay").style.display = "flex";
+ el("msg").classList.add("hide");
+ try {
+  const {all, fails} = await loadLive();
+  if(all.length > 0){
+   ROWS = all; live = true;
+   if(fails.length > 0) {
+    el("msg").className = "note"; 
+    el("msg").innerHTML = "<b>Không đọc được dữ liệu của:</b> " + fails.join(", ") + " (Có thể tên sheet bị sai, hoặc không có dữ liệu hợp lệ).";
+   }
+  } else {
+   ROWS = []; live = false; 
+   el("msg").className = "note"; 
+   el("msg").innerHTML = "<b>Lỗi không lấy được dữ liệu:</b> Bạn hãy vào File Google Sheet dữ liệu, ấn vào nút <b>Chia sẻ (Share)</b> ở góc trên cùng bên phải và chọn chế độ <b>'Bất kỳ ai có liên kết' (Anyone with the link)</b>.";
+  }
+  build();
+  el("month").value = new Date().getMonth() + 1;
+  render();
+ } catch(err) {
+  console.error(err);
+  el("msg").className = "note";
+  el("msg").innerHTML = "<b>Trình duyệt chặn kết nối:</b> Do bạn đang mở file trực tiếp từ máy tính (C:/...), trình duyệt có thể chặn kết nối. Hãy thử dùng Edge/Firefox hoặc úp file html này lên Drive/Hosting miễn phí.";
+ } finally {
+  setTimeout(() => { el("loadingOverlay").style.display = "none"; }, 200);
+ }
+}
+
+el("dept").innerHTML='<option value="">Toàn phường (tất cả phòng)</option>'+DEPTS.map(d=>`<option>${d}</option>`).join("");
+for(let m=1;m<=12;m++)el("month").innerHTML+=`<option value="${m}">Tháng ${m}</option>`;
+ST.forEach((x,i)=>el("st").innerHTML+=`<option value="${i}">${x[0]}</option>`);
+el("dept").onchange=render;el("st").onchange=tasks;el("q").oninput=tasks;el("reload").onclick=init;
+el("tabs").onclick=e=>{const t=e.target.dataset.t;if(!t)return;
+ document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b==e.target));
+ ["ov","tk","lk","rp","xl"].forEach(i=>el(i).classList.toggle("hide",i!=t));
+ updateStatus();
+};
+
+init();
+</script>
+</body>
+</html>
