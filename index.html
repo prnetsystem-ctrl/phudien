@@ -58,25 +58,25 @@ th:first-child,td:first-child{text-align:left}
 tr.tot td{font-weight:700}
 
 /* Tùy chỉnh cột Tab Công việc được giao */
-#tasks th:nth-child(5), #tasks td:nth-child(5) { width: 10%; } /* Nguồn */
-#tasks th:nth-child(6), #tasks td:nth-child(6) { white-space: nowrap; width: 1%; } /* Lãnh đạo */
-#tasks th:nth-child(7), #tasks td:nth-child(7) { white-space: nowrap; width: 1%; text-align: center; } /* Hạn */
-#tasks th:nth-child(8), #tasks td:nth-child(8) { width: 10%; text-align: center; } /* Trạng thái */
-#tasks th:nth-child(9), #tasks td:nth-child(9) { width: 5%; text-align: center; } /* Dòng */
+#tasks th:nth-child(5), #tasks td:nth-child(5) { width: 10%; }
+#tasks th:nth-child(6), #tasks td:nth-child(6) { white-space: nowrap; width: 1%; }
+#tasks th:nth-child(7), #tasks td:nth-child(7) { white-space: nowrap; width: 1%; text-align: center; }
+#tasks th:nth-child(8), #tasks td:nth-child(8) { width: 10%; text-align: center; }
+#tasks th:nth-child(9), #tasks td:nth-child(9) { width: 5%; text-align: center; }
 #tasks td.l{text-align:left; min-width:200px; width: auto;}
 
-/* Tùy chỉnh cột Tab Cần xử lý - Tăng Nội dung, Ép Lãnh đạo/Hạn không xuống dòng */
+/* Tùy chỉnh cột Tab Cần xử lý */
 #xlA th:nth-child(3), #xlA td:nth-child(3),
 #xlS th:nth-child(3), #xlS td:nth-child(3),
-#xlQ th:nth-child(3), #xlQ td:nth-child(3) { min-width: 300px; width: auto; } 
+#xlQ th:nth-child(3), #xlQ td:nth-child(3) { min-width: 300px; width: auto; }
 
 #xlA th:nth-child(5), #xlA td:nth-child(5),
 #xlS th:nth-child(5), #xlS td:nth-child(5),
-#xlQ th:nth-child(5), #xlQ td:nth-child(5) { white-space: nowrap; width: 1%; } 
+#xlQ th:nth-child(5), #xlQ td:nth-child(5) { white-space: nowrap; width: 1%; }
 
 #xlA th:nth-child(6), #xlA td:nth-child(6),
 #xlS th:nth-child(6), #xlS td:nth-child(6),
-#xlQ th:nth-child(6), #xlQ td:nth-child(6) { white-space: nowrap; width: 1%; text-align: center; } 
+#xlQ th:nth-child(6), #xlQ td:nth-child(6) { white-space: nowrap; width: 1%; text-align: center; }
 
 #xlA td.l, #xlS td.l, #xlQ td.l { text-align:left; min-width: 150px; }
 
@@ -217,6 +217,7 @@ const el=id=>document.getElementById(id);
 const sum=a=>a.reduce((x,y)=>x+y,0);
 const pct=(a,b)=>b?(a/b*100).toFixed(1).replace(".",",")+"%":"0,0%";
 const esc=s=>String(s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])).replace(/\n/g, '<br>');
+const cleanStr=s=>String(s||"").normalize("NFC").toLowerCase().replace(/\s+/g," ").trim();
 
 function updateStatus() {
     const d = el("dept").value;
@@ -244,83 +245,106 @@ function parseCSV(t){
  }
  if(f||r.length){r.push(f);R.push(r)}return R
 }
-const normSt=s=>{s=(s||"").toLowerCase();return s.includes("quá hạn")?1:s.includes("chưa")?2:s.includes("chờ")?3:s.includes("hoàn thành")?0:-1};
-const normFlow=s=>{s=(s||"").toLowerCase();return s.includes("xlvb")?"XLVB":s.includes("kết luận")||s.includes("tkl")?"TKL":s.includes("ct")||s.includes("chương trình")?"CTCT":"CV"};
-const normSrc=s=>SRC.find(x=>x.toLowerCase()==(s||"").trim().toLowerCase())||"Các đơn vị khác";
+const normSt=s=>{s=cleanStr(s);return s.includes("quá hạn")?1:s.includes("chưa")?2:s.includes("chờ")?3:s.includes("hoàn thành")?0:-1};
+const normFlow=s=>{s=cleanStr(s);return s.includes("xlvb")?"XLVB":s.includes("kết luận")||s.includes("tkl")?"TKL":s.includes("ct")||s.includes("chương trình")?"CTCT":"CV"};
+const normSrc=s=>SRC.find(x=>cleanStr(x)==cleanStr(s))||"Các đơn vị khác";
 
-// Dò tìm Cột Thông Minh: Khóa chặt vị trí Cột C và Cột M như yêu cầu
 function rowsFromCSV(dept,csv){
   const rows = parseCSV(csv);
   if (!rows.length) return [];
-  
-  let headerRow = rows[0], headerIdx = 0;
-  let maxMatches = 0;
-  for(let i=0; i<Math.min(10, rows.length); i++) {
-     let rowStr = rows[i].join("").toLowerCase();
+
+  // 1. Xác định dòng tiêu đề chính trong 12 dòng đầu
+  let headerIdx = 0, maxMatches = 0;
+  for(let i=0; i<Math.min(12, rows.length); i++) {
+     let rowStr = cleanStr(rows[i].join(" "));
      let matches = 0;
      if(rowStr.includes("trạng thái")) matches++;
      if(rowStr.includes("nội dung") || rowStr.includes("công việc")) matches++;
      if(rowStr.includes("lãnh đạo")) matches++;
      if(rowStr.includes("tuần")) matches++;
+     if(rowStr.includes("tháng")) matches++;
+     if(rowStr.includes("phải thực hiện xong")) matches += 2;
      if(matches > maxMatches) {
          maxMatches = matches;
-         headerRow = rows[i];
          headerIdx = i;
      }
   }
-  
-  const findCol = (keywords, expectedIndex) => {
-      // Ưu tiên 1: Quét cột đã được chỉ định (expectedIndex) trước để khoá cứng Index
-      let hExpected = String(headerRow[expectedIndex] || "").toLowerCase().replace(/\s+/g, ' ');
-      for (let kw of keywords) {
-          if (hExpected.includes(kw)) return expectedIndex;
+
+  // 2. Gom text tiêu đề nhiều dòng (xử lý trường hợp gộp ô / tiêu đề 2 dòng)
+  let endHeader = headerIdx;
+  if (headerIdx + 1 < rows.length) {
+      const nextStr = cleanStr(rows[headerIdx + 1].join(" "));
+      if (!/tháng\s*\d+/.test(nextStr) && !nextStr.includes("hoàn thành") && !nextStr.includes("đang chờ")) {
+          endHeader = headerIdx + 1;
       }
-      
-      // Ưu tiên 2: Nếu bị chèn lệch, mới quét toàn bộ để tìm từ khóa
+  }
+  const maxCols = Math.max(...rows.slice(0, Math.min(12, rows.length)).map(r => r.length));
+  const colHeaders = new Array(maxCols).fill("");
+  for (let c = 0; c < maxCols; c++) {
+      let parts = [];
+      for (let r = Math.max(0, headerIdx - 1); r <= endHeader; r++) {
+          let val = cleanStr(rows[r] && rows[r][c]);
+          if (val) parts.push(val);
+      }
+      colHeaders[c] = parts.join(" ");
+  }
+
+  // 3. Quét từ khóa ưu tiên trên toàn bộ cột đã chuẩn hóa NFC, có hỗ trợ loại trừ cột trùng
+  const findCol = (keywords, def, excludeIdx = -1) => {
       for (let kw of keywords) {
-          for (let j=0; j<headerRow.length; j++) {
-              let h = String(headerRow[j]).toLowerCase().replace(/\s+/g, ' ');
-              if (h.includes(kw)) {
-                  if (kw === "số" && h.includes("thứ tự")) continue;
+          let nkw = cleanStr(kw);
+          for (let j = 0; j < colHeaders.length; j++) {
+              if (j === excludeIdx) continue;
+              let h = colHeaders[j];
+              if (h.includes(nkw)) {
+                  if (nkw === "số" && h.includes("thứ tự")) continue;
                   return j;
               }
           }
       }
-      return expectedIndex; // Fallback
+      return def;
   };
+
+  const leadIdx = findCol(["lãnh đạo chỉ đạo", "lãnh đạo phụ trách", "lãnh đạo"], 11);
+  // Ưu tiên tuyệt đối cụm "ngày phải thực hiện xong" / "phải thực hiện xong" và cấm trùng cột Lãnh đạo
+  const dueIdx = findCol(
+      ["ngày phải thực hiện xong", "phải thực hiện xong", "ngày phải hoàn thành", "thời hạn hoàn thành", "thời hạn", "hạn xử lý", "hạn hoàn thành", "hạn"],
+      leadIdx === 12 ? 13 : 12,
+      leadIdx
+  );
 
   const dC = {
       st: findCol(["trạng thái"], 1),
       mo: findCol(["tháng"], 4),
       wk: findCol(["tuần"], 5),
-      tx: findCol(["nội dung", "ý kiến", "nhiệm vụ"], 6),
-      doc: findCol(["số công văn", "văn bản", "số cv", "số", "ký hiệu"], 2), // Index 2 = Cột C (Số Công văn/Văn bản)
-      src: findCol(["nguồn"], 8),
-      flow: findCol(["luồng"], 9),
-      lead: findCol(["lãnh đạo"], 11),
-      due: findCol(["phải thực hiện xong", "ngày phải thực hiện", "thời hạn", "hạn"], 12), // Index 12 = Cột M (Ngày phải thực hiện xong)
+      tx: findCol(["nội dung công việc", "nội dung", "ý kiến", "nhiệm vụ"], 6),
+      doc: findCol(["số công văn/văn bản", "số công văn", "công văn/văn bản", "số, ký hiệu", "số/ký hiệu", "số văn bản", "số cv", "ký hiệu"], 7),
+      src: findCol(["nguồn giao việc", "nguồn"], 8),
+      flow: findCol(["loại luồng", "luồng"], 9),
+      lead: leadIdx,
+      due: dueIdx,
       kq: findCol(["tiến độ", "kết quả"], 14),
-      nh: findCol(["ngày ht", "hoàn thành thực tế"], 15),
-      ly: findCol(["lý do"], 16),
-      gc: findCol(["người", "thực hiện", "ghi chú"], 17)
+      nh: findCol(["ngày hoàn thành", "ngày ht"], 15),
+      ly: findCol(["lý do chưa hoàn thành", "lý do"], 16),
+      gc: findCol(["người thực hiện", "chuyên viên", "ghi chú"], 17)
   };
-  
+
   const out = [];
   rows.forEach((r, i) => {
-      if (i <= headerIdx) return;
+      if (i <= endHeader) return;
       const moStr = String(r[dC.mo] || "").trim();
       let moMatch = /tháng\s*(\d+)/i.exec(moStr);
       if (!moMatch && /^\d{1,2}$/.test(moStr)) moMatch = [moStr, moStr];
       const st = normSt(r[dC.st]);
       const tx = String(r[dC.tx] || "").trim();
-      
+
       if (!moMatch || st < 0 || tx.length < 2) return;
       const wkStr = String(r[dC.wk] || "").trim();
       let wkMatch = /(\d+)/.exec(wkStr);
       const w = Math.min(5, Math.max(1, wkMatch ? parseInt(wkMatch[1]) : 1));
       out.push({
-          r: i + 1, d: dept, m: parseInt(moMatch[1]), w: w, st: st, 
-          tx: tx, doc: r[dC.doc], src: normSrc(r[dC.src]), fl: normFlow(r[dC.flow]), 
+          r: i + 1, d: dept, m: parseInt(moMatch[1]), w: w, st: st,
+          tx: tx, doc: r[dC.doc], src: normSrc(r[dC.src]), fl: normFlow(r[dC.flow]),
           lead: r[dC.lead], due: r[dC.due], kq: r[dC.kq], nh: r[dC.nh], ly: r[dC.ly], gc: r[dC.gc]
       });
   });
@@ -464,7 +488,7 @@ function repW(){
  else nx.push(`Tỷ lệ hoàn thành chung đạt ${pct(T.hd,T.t)}.`);
  if(low&&low.hd<low.t)nx.push(`Đơn vị có tỷ lệ hoàn thành thấp nhất: ${low.d} (${pct(low.hd,low.t)}, còn ${low.nd} nhiệm vụ chưa hoàn thành, ${low.pe} đang xử lý).`);
  if(full.length)nx.push(`Đơn vị hoàn thành 100% nhiệm vụ: ${full.join(", ")}.`);
-  
+
   el("rpt").innerHTML=`
   <div class="hd" style="align-items:flex-start;">
     <div style="width: 40%; text-align: center;">
@@ -501,7 +525,6 @@ function repW(){
 
 function lst(rs,id,empty){
  const n=rs.length; rs=rs.slice(0,200);
- // Cập nhật: Đã xóa cột "Tiến độ/kết quả" ở cả tiêu đề (th) và dữ liệu (td), bảng chỉ còn 9 cột
  el(id).innerHTML=`<tr><th>Phòng ban</th><th>Tháng/Tuần</th><th>Nội dung</th><th>Văn bản chỉ đạo</th><th>Lãnh đạo</th><th>Hạn</th><th>Lý do chưa hoàn thành</th><th>Người thực hiện</th><th>Dòng</th></tr>`+
  (rs.map(x=>`<tr><td>${esc(x.d)}</td><td>T${x.m}/Tuần ${x.w}</td><td class="l">${esc(x.tx||"(chưa nhập nội dung)")}</td><td class="l">${esc(x.doc)}</td><td>${esc(x.lead)}</td><td style="text-align:center;">${esc(x.due)}</td><td class="l">${esc(x.ly)}</td><td class="l">${esc(x.gc)}</td><td style="text-align:center;">${x.r||""}</td></tr>`).join("")||`<tr><td colspan="9" style="text-align:center;color:var(--mu)">${empty}</td></tr>`)+
  (n>200?`<tr><td colspan="9" style="text-align:center;color:var(--mu)">Hiển thị 200/${n} – hãy lọc theo phòng</td></tr>`:"")}
@@ -525,12 +548,12 @@ async function init(){
   if(all.length > 0){
    ROWS = all; live = true;
    if(fails.length > 0) {
-    el("msg").className = "note"; 
+    el("msg").className = "note";
     el("msg").innerHTML = "<b>Không đọc được dữ liệu của:</b> " + fails.join(", ") + " (Có thể tên sheet bị sai, hoặc không có dữ liệu hợp lệ).";
    }
   } else {
-   ROWS = []; live = false; 
-   el("msg").className = "note"; 
+   ROWS = []; live = false;
+   el("msg").className = "note";
    el("msg").innerHTML = "<b>Lỗi không lấy được dữ liệu:</b> Bạn hãy vào File Google Sheet dữ liệu, ấn vào nút <b>Chia sẻ (Share)</b> ở góc trên cùng bên phải và chọn chế độ <b>'Bất kỳ ai có liên kết' (Anyone with the link)</b>.";
   }
   build();
