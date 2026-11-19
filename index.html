@@ -193,6 +193,7 @@ tr.tot td{font-weight:700}
 
 <script>
 const SHEET_ID="10vl4JuyRYwhOmWMa2Ddp-RBO48NWF4oWC84g73_QyvU";
+const API_URL="https://script.google.com/macros/s/AKfycbwNcvRLqYC7sNJWAwEQl-cWNfNicmemudcSxdR7dZkya0s8duFNMOjppsTUgUgPEi66fA/exec";
 
 const TABS=[
   ["Phòng HT-ĐT-MT", "1. Phòng HT-ĐT-MT"],
@@ -348,6 +349,19 @@ function rowsFromCSV(dept,csv){
 }
 
 async function loadLive(){
+ if(API_URL && API_URL.startsWith("http")){
+  try{
+   const res = await fetch(API_URL, {redirect: "follow"});
+   if(!res.ok) throw new Error("HTTP " + res.status);
+   const j = await res.json();
+   if(j && Array.isArray(j.rows) && j.rows.length > 0){
+    return {all: j.rows, fails: j.missing || []};
+   }
+   console.warn("Apps Script trả về 0 dòng, chuyển sang dự phòng CSV:", j);
+  }catch(e){
+   console.warn("Lỗi kết nối Apps Script, tự động chuyển sang đọc CSV:", e);
+  }
+ }
  const fails=[]; let all=[];
  await Promise.all(TABS.map(async([name,tab])=>{
   try{
@@ -550,7 +564,7 @@ async function init(){
   } else {
    ROWS = []; live = false;
    el("msg").className = "note";
-   el("msg").innerHTML = "<b>Lỗi không lấy được dữ liệu:</b> Bạn hãy vào File Google Sheet dữ liệu, ấn vào nút <b>Chia sẻ (Share)</b> ở góc trên cùng bên phải và chọn chế độ <b>'Bất kỳ ai có liên kết' (Anyone with the link)</b>.";
+   el("msg").innerHTML = "<b>Lỗi không lấy được dữ liệu:</b> Kiểm tra lại đường link Apps Script (API_URL) hoặc quyền chia sẻ công khai của file Google Sheet.";
   }
   build();
   el("month").value = new Date().getMonth() + 1;
@@ -558,7 +572,7 @@ async function init(){
  } catch(err) {
   console.error(err);
   el("msg").className = "note";
-  el("msg").innerHTML = "<b>Trình duyệt chặn kết nối:</b> Do bạn đang mở file trực tiếp từ máy tính (C:/...), trình duyệt có thể chặn kết nối. Hãy thử dùng Edge/Firefox hoặc úp file html này lên Drive/Hosting miễn phí.";
+  el("msg").innerHTML = "<b>Lỗi kết nối:</b> Không thể tải dữ liệu từ máy chủ.";
  } finally {
   setTimeout(() => { el("loadingOverlay").style.display = "none"; }, 200);
  }
