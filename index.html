@@ -18,6 +18,47 @@ button{cursor:pointer}
 .tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap;}
 .tabs button.on{background:var(--pr);color:#fff;border-color:var(--pr)}
 main{padding:16px 20px;max-width:1240px;margin:auto; position: relative; min-height: 60vh;}
+
+/* Popup Đăng nhập che toàn màn hình trong lúc tải ngầm dữ liệu */
+#loginOverlay {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(30,79,163,0.92), rgba(15,32,68,0.96));
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 16px;
+}
+.login-box {
+    background: var(--card);
+    color: var(--tx);
+    width: 100%;
+    max-width: 380px;
+    padding: 28px 26px;
+    border-radius: 14px;
+    box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+    border: 1px solid var(--bd);
+}
+.login-box h2 { margin: 0 0 6px; font-size: 18px; color: var(--pr); text-align: center; }
+.login-box p.sub { margin: 0 0 20px; font-size: 12px; color: var(--mu); text-align: center; }
+.login-box label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+.login-box input { width: 100%; padding: 10px 12px; margin-bottom: 14px; border-radius: 8px; border: 1px solid var(--bd); }
+.login-box button[type="submit"] {
+    width: 100%;
+    padding: 10px;
+    background: var(--pr);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    margin-top: 4px;
+}
+.login-box button[type="submit"]:hover { opacity: 0.92; }
+#loginErr { color: var(--nd); font-size: 12px; margin: -6px 0 12px; text-align: center; min-height: 16px; }
+
 #loadingOverlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -107,6 +148,20 @@ tr.tot td{font-weight:700}
 </head>
 <body>
 
+<!-- Popup Đăng nhập (dữ liệu tải ngầm song song ngay khi mở trang) -->
+<div id="loginOverlay">
+  <form class="login-box" id="loginForm" autocomplete="off">
+    <h2>UBND PHƯỜNG PHÚ DIỄN</h2>
+    <p class="sub">Hệ thống theo dõi tiến độ công việc năm 2026</p>
+    <label for="uName">Tên đăng nhập</label>
+    <input id="uName" type="text" placeholder="Nhập tên đăng nhập" required autofocus>
+    <label for="uPass">Mật khẩu</label>
+    <input id="uPass" type="password" placeholder="Nhập mật khẩu" required>
+    <div id="loginErr"></div>
+    <button type="submit">Đăng nhập</button>
+  </form>
+</div>
+
 <header>
     <h1>Sổ theo dõi tiến độ công việc – UBND Phường Phú Diễn 2026</h1>
     <p>Dữ liệu được lấy trực tiếp từ Sổ theo dõi tiến độ công việc của UBND Phường Phú Diễn năm 2026</p>
@@ -127,8 +182,8 @@ tr.tot td{font-weight:700}
 <main>
 <div id="loadingOverlay">
     <div class="spinner"></div>
-    <h2>Đang kết nối để tải dữ liệu, vui lòng đợi vài giây...</h2>
-    <p>(Lần tải đầu tiên trong ngày sẽ mất khoảng 3 - 5 giây)</p>
+    <h2>Đang đồng bộ dữ liệu, vui lòng đợi vài giây...</h2>
+    <p>(Hệ thống đang hoàn tất quá trình tải dữ liệu từ Sổ theo dõi)</p>
 </div>
 <div id="msg" class="note hide"></div>
 <div id="statusBar" class="status-bar hide">
@@ -194,6 +249,7 @@ tr.tot td{font-weight:700}
 <script>
 const SHEET_ID="10vl4JuyRYwhOmWMa2Ddp-RBO48NWF4oWC84g73_QyvU";
 const API_URL="https://script.google.com/macros/s/AKfycbwNcvRLqYC7sNJWAwEQl-cWNfNicmemudcSxdR7dZkya0s8duFNMOjppsTUgUgPEi66fA/exec";
+const CACHE_KEY="PD_DASHBOARD_CACHE_2026";
 
 const TABS=[
   ["Phòng HT-ĐT-MT", "1. Phòng HT-ĐT-MT"],
@@ -219,6 +275,21 @@ const sum=a=>a.reduce((x,y)=>x+y,0);
 const pct=(a,b)=>b?(a/b*100).toFixed(1).replace(".",",")+"%":"0,0%";
 const esc=s=>String(s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])).replace(/\n/g, '<br>');
 const cleanStr=s=>String(s||"").normalize("NFC").toLowerCase().replace(/\s+/g," ").trim();
+
+// Xử lý đăng nhập (hỗ trợ cả click nút và phím Enter)
+el("loginForm").onsubmit = function(e) {
+    e.preventDefault();
+    const u = el("uName").value.trim().toLowerCase();
+    const p = el("uPass").value.trim();
+    if (u === "phudien" && p === "ubnd") {
+        el("loginErr").textContent = "";
+        el("loginOverlay").classList.add("hide");
+    } else {
+        el("loginErr").textContent = "Sai tên đăng nhập hoặc mật khẩu!";
+        el("uPass").value = "";
+        el("uPass").focus();
+    }
+};
 
 function updateStatus() {
     const d = el("dept").value;
@@ -348,18 +419,18 @@ function rowsFromCSV(dept,csv){
   return out;
 }
 
-async function loadLive(){
+async function loadLive(forceFresh = false){
  if(API_URL && API_URL.startsWith("http")){
   try{
-   const res = await fetch(API_URL, {redirect: "follow"});
+   const url = forceFresh ? (API_URL + (API_URL.includes("?") ? "&" : "?") + "nocache=1") : API_URL;
+   const res = await fetch(url, {redirect: "follow"});
    if(!res.ok) throw new Error("HTTP " + res.status);
    const j = await res.json();
    if(j && Array.isArray(j.rows) && j.rows.length > 0){
     return {all: j.rows, fails: j.missing || []};
    }
-   console.warn("Apps Script trả về 0 dòng, chuyển sang dự phòng CSV:", j);
   }catch(e){
-   console.warn("Lỗi kết nối Apps Script, tự động chuyển sang đọc CSV:", e);
+   console.warn("Lỗi kết nối Apps Script, chuyển sang CSV:", e);
   }
  }
  const fails=[]; let all=[];
@@ -373,9 +444,7 @@ async function loadLive(){
    const rows=rowsFromCSV(name, text);
    if(!rows.length) throw 0;
    all=all.concat(rows);
-  }catch(e){
-   fails.push(name);
-  }
+  }catch(e){ fails.push(name); }
  }));
  return {all, fails};
 }
@@ -404,10 +473,7 @@ function breakdown(id,keys,get,m,d){
 
 let trendChartInst = null, deptChartInst = null;
 function renderCharts(m, d) {
-  if (typeof Chart === 'undefined') {
-      console.warn("Thư viện Chart.js bị trình duyệt chặn hoặc mất mạng.");
-      return;
-  }
+  if (typeof Chart === 'undefined') return;
   const labels = Array.from({length: m}, (_, i) => 'T' + (i + 1));
   const trendDataTotal = [], trendDataDone = [];
   for(let i=1; i<=m; i++){
@@ -550,31 +616,63 @@ function xl(){
  updateStatus();
 }
 
-async function init(){
- el("loadingOverlay").style.display = "flex";
+async function init(forceFresh = false){
  el("msg").classList.add("hide");
+ let hasCache = false;
+
+ if (!forceFresh) {
+  try {
+   const saved = localStorage.getItem(CACHE_KEY);
+   if (saved) {
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+     ROWS = parsed;
+     build();
+     if (!el("month").dataset.inited) {
+      el("month").value = new Date().getMonth() + 1;
+      el("month").dataset.inited = "1";
+     }
+     render();
+     el("loadingOverlay").style.display = "none";
+     el("statusText").innerHTML += ' · <span style="color:#1e4fa3;font-weight:600">↻ Đang đồng bộ dữ liệu mới nhất...</span>';
+     hasCache = true;
+    }
+   }
+  } catch (e) {}
+ }
+
+ if (!hasCache) el("loadingOverlay").style.display = "flex";
+
  try {
-  const {all, fails} = await loadLive();
+  const {all, fails} = await loadLive(forceFresh);
   if(all.length > 0){
-   ROWS = all; live = true;
+   ROWS = all;
+   try { localStorage.setItem(CACHE_KEY, JSON.stringify(all)); } catch (e) {}
    if(fails.length > 0) {
     el("msg").className = "note";
-    el("msg").innerHTML = "<b>Không đọc được dữ liệu của:</b> " + fails.join(", ") + " (Có thể tên sheet bị sai, hoặc không có dữ liệu hợp lệ).";
+    el("msg").innerHTML = "<b>Không đọc được dữ liệu của:</b> " + fails.join(", ");
    }
-  } else {
-   ROWS = []; live = false;
+   build();
+   if (!el("month").dataset.inited) {
+    el("month").value = new Date().getMonth() + 1;
+    el("month").dataset.inited = "1";
+   }
+   render();
+  } else if (!hasCache) {
+   ROWS = [];
    el("msg").className = "note";
    el("msg").innerHTML = "<b>Lỗi không lấy được dữ liệu:</b> Kiểm tra lại đường link Apps Script (API_URL) hoặc quyền chia sẻ công khai của file Google Sheet.";
+   build();
+   render();
   }
-  build();
-  el("month").value = new Date().getMonth() + 1;
-  render();
  } catch(err) {
   console.error(err);
-  el("msg").className = "note";
-  el("msg").innerHTML = "<b>Lỗi kết nối:</b> Không thể tải dữ liệu từ máy chủ.";
+  if (!hasCache) {
+   el("msg").className = "note";
+   el("msg").innerHTML = "<b>Lỗi kết nối:</b> Không thể tải dữ liệu từ máy chủ.";
+  }
  } finally {
-  setTimeout(() => { el("loadingOverlay").style.display = "none"; }, 200);
+  el("loadingOverlay").style.display = "none";
  }
 }
 
@@ -588,13 +686,15 @@ el("month").onchange=()=>{el("week").dataset.u="";render()};
 el("cp").onclick=async()=>{try{await navigator.clipboard.writeText(el("rpt").innerText);el("cp").textContent="Đã sao chép ✓"}catch(e){el("cp").textContent="Không sao chép được"}setTimeout(()=>el("cp").textContent="Sao chép",1800)};
 el("pr").onclick=()=>window.print();
 
-el("dept").onchange=render;el("st").onchange=tasks;el("q").oninput=tasks;el("reload").onclick=init;
+el("dept").onchange=render;el("st").onchange=tasks;el("q").oninput=tasks;
+el("reload").onclick=()=>init(true);
 el("tabs").onclick=e=>{const t=e.target.dataset.t;if(!t)return;
  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b==e.target));
  ["ov","tk","lk","rp","xl"].forEach(i=>el(i).classList.toggle("hide",i!=t));
  updateStatus();
 };
 
+// Tự động tải ngầm dữ liệu ngay khi mở trang (song song với lúc người dùng gõ tài khoản)
 init();
 </script>
 </body>
