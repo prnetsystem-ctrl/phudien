@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Theo dõi công việc – UBND Phường Phú Diễn 2026</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f4f6fa;--card:#fff;--tx:#1d2433;--mu:#667085;--bd:#e3e8ef;--pr:#1e4fa3;--ok:#2e9e5b;--late:#e08a00;--nd:#d6453d;--pe:#7a8599}
 @media (prefers-color-scheme:dark){:root{--bg:#12161f;--card:#1b2130;--tx:#e8ecf4;--mu:#97a1b5;--bd:#2c3446;--pr:#6f9bf0}}
@@ -15,6 +16,10 @@ header h1{margin:0;font-size:18px}header p{margin:2px 0 0;opacity:.85;font-size:
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--bd); position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
 select,input,button{padding:7px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:inherit}
 button{cursor:pointer}
+.btn-excel{background:#1d6f42;color:#fff;border-color:#1d6f42;font-weight:600}
+.btn-excel:hover{opacity:.9}
+.btn-pdf{background:#c62828;color:#fff;border-color:#c62828;font-weight:600}
+.btn-pdf:hover{opacity:.9}
 .tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap;}
 .tabs button.on{background:var(--pr);color:#fff;border-color:var(--pr)}
 main{padding:16px 20px;max-width:1240px;margin:auto; position: relative; min-height: 60vh;}
@@ -98,17 +103,16 @@ th{color:var(--mu);font-weight:600;background:var(--bg)}
 th:first-child,td:first-child{text-align:left}
 tr.tot td{font-weight:700}
 
-/* Cân đối tỷ lệ cột Tab Công việc được giao (vừa khít 1 màn hình) */
+/* Cân đối tỷ lệ 8 cột Tab Công việc được giao (đã bỏ cột Dòng) */
 #tasks { table-layout: fixed; width: 100%; }
 #tasks th:nth-child(1), #tasks td:nth-child(1) { width: 11%; text-align: left; }
-#tasks th:nth-child(2), #tasks td:nth-child(2) { width: 4%; text-align: center; }
-#tasks th:nth-child(3), #tasks td:nth-child(3) { width: 34%; text-align: left; }
+#tasks th:nth-child(2), #tasks td:nth-child(2) { width: 5%; text-align: center; }
+#tasks th:nth-child(3), #tasks td:nth-child(3) { width: 36%; text-align: left; }
 #tasks th:nth-child(4), #tasks td:nth-child(4) { width: 11%; text-align: left; }
 #tasks th:nth-child(5), #tasks td:nth-child(5) { width: 9%; text-align: left; }
 #tasks th:nth-child(6), #tasks td:nth-child(6) { width: 11%; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #tasks th:nth-child(7), #tasks td:nth-child(7) { width: 8%; text-align: center; white-space: nowrap; }
-#tasks th:nth-child(8), #tasks td:nth-child(8) { width: 8%; text-align: center; }
-#tasks th:nth-child(9), #tasks td:nth-child(9) { width: 4%; text-align: center; }
+#tasks th:nth-child(8), #tasks td:nth-child(8) { width: 9%; text-align: center; }
 
 /* Cân đối tỷ lệ cột Tab Cần xử lý (vừa khít 1 màn hình) */
 #xlA, #xlS, #xlQ { table-layout: fixed; width: 100%; }
@@ -159,17 +163,21 @@ tr.tot td{font-weight:700}
 .status-bar {margin-bottom:15px; padding:8px 15px; background-color:#fff3e0; border-left:4px solid #ff9800; border-radius:4px; font-size:13px; color:#333; display:flex; align-items:center;}
 .status-bar span.dot {color:#ff9800; font-size:16px; margin-right:8px; line-height:1;}
 .chart-container { position: relative; height: 300px; width: 100%; }
+.xl-print-hd { display: none; }
 
-/* Định dạng in / lưu PDF chuẩn A4, giữ nguyên 2 cột Tiêu ngữ & Chữ ký */
-@page { size: A4 portrait; margin: 20mm 15mm 20mm 25mm; }
+/* Định dạng in / lưu PDF chuẩn A4 cho cả Báo cáo tuần và Tab Cần xử lý */
+@page { size: A4 portrait; margin: 18mm 14mm 18mm 20mm; }
 @media print {
   html, body { background: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; }
-  header, .bar, #loginOverlay, #loadingOverlay, #msg, #statusBar, #ov, #tk, #lk, #xl, #rp > .card {
+  header, .bar, #loginOverlay, #loadingOverlay, #msg, #statusBar, #ov, #tk, #lk {
     display: none !important;
   }
   main { padding: 0 !important; margin: 0 !important; max-width: 100% !important; min-height: 0 !important; }
-  #rp { display: block !important; }
-  #rpt {
+
+  /* Chế độ in mặc định: Tab Báo cáo tuần tự động */
+  body:not(.print-xl) #xl, body:not(.print-xl) #rp > .card { display: none !important; }
+  body:not(.print-xl) #rp { display: block !important; }
+  body:not(.print-xl) #rpt {
     display: block !important;
     border: none !important;
     border-radius: 0 !important;
@@ -181,9 +189,24 @@ tr.tot td{font-weight:700}
     font: 13pt/1.45 "Times New Roman", serif !important;
     color: #000 !important;
   }
-  #rpt .hd { display: flex !important; justify-content: space-between !important; align-items: flex-start !important; }
-  #rpt .sg { display: flex !important; justify-content: space-between !important; page-break-inside: avoid; }
-  #rpt p { page-break-inside: avoid; }
+  body:not(.print-xl) #rpt .hd { display: flex !important; justify-content: space-between !important; align-items: flex-start !important; }
+  body:not(.print-xl) #rpt .sg { display: flex !important; justify-content: space-between !important; page-break-inside: avoid; }
+  body:not(.print-xl) #rpt p { page-break-inside: avoid; }
+
+  /* Chế độ in Tab Cần xử lý */
+  body.print-xl #rp, body.print-xl .xl-bar { display: none !important; }
+  body.print-xl #xl { display: block !important; }
+  body.print-xl .xl-print-hd { display: block !important; text-align: center; margin-bottom: 14px; }
+  body.print-xl .xl-print-hd h2 { margin: 0 0 4px; font-size: 14pt; color: #000; }
+  body.print-xl .xl-print-hd p { margin: 0; font-size: 10.5pt; color: #333; }
+  body.print-xl #xl .card { border: none !important; padding: 0 !important; margin: 0 0 14px !important; background: #fff !important; }
+  body.print-xl #xl h3 { font-size: 11.5pt; color: #000; margin: 8px 0 6px; page-break-after: avoid; }
+  body.print-xl #xl .sc { overflow: visible !important; }
+  body.print-xl #xl table { font-size: 9.5pt !important; border: 1px solid #888; }
+  body.print-xl #xl th, body.print-xl #xl td { border: 1px solid #bbb !important; padding: 4px 5px !important; color: #000 !important; white-space: normal !important; overflow: visible !important; }
+  body.print-xl #xl th { background: #eef2f7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.print-xl #xl tr { page-break-inside: avoid; }
+  body.print-xl #xl .chip { border: 1px solid #bbb; background: #f5f5f5 !important; color: #000 !important; font-size: 9pt; }
 }
 </style>
 </head>
@@ -248,9 +271,10 @@ tr.tot td{font-weight:700}
 
 <section id="tk" class="hide">
   <div class="card">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
       <select id="st"><option value="">Tất cả trạng thái</option></select>
       <input id="q" placeholder="Tìm nội dung, văn bản, lãnh đạo…" style="flex:1;min-width:200px">
+      <button id="expExcel" class="btn-excel" title="Xuất danh sách đang lọc ra file Excel">⬇ Xuất Excel</button>
     </div>
     <div class="sc"><table id="tasks"></table></div>
   </div>
@@ -281,6 +305,11 @@ tr.tot td{font-weight:700}
 </section>
 
 <section id="xl" class="hide">
+  <div class="card xl-bar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span style="color:var(--mu);font-size:13px">Tổng hợp các nhiệm vụ chưa hoàn thành, sắp đến hạn và quá hạn cần xử lý</span>
+    <button id="prXl" class="btn-pdf" style="margin-left:auto">⬇ Xuất PDF</button>
+  </div>
+  <div class="xl-print-hd" id="xlPrintHd"></div>
   <div class="card"><h3 id="xlAh"></h3><div id="xlchips"></div><div class="sc"><table id="xlA"></table></div></div>
   <div class="card"><h3 id="xlSh"></h3><div class="sc"><table id="xlS"></table></div></div>
   <div class="card"><h3 id="xlQh"></h3><div class="sc"><table id="xlQ"></table></div></div>
@@ -590,14 +619,50 @@ function render(){
  updateStatus();
 }
 
-function tasks(){
+function getFilteredTasks(){
  const d=el("dept").value,m=+el("month").value,s=el("st").value,q=el("q").value.toLowerCase();
+ return ROWS.filter(x=>x.m==m&&(!d||x.d==d)&&(s===""||x.st==s)&&(!q||((x.tx||"")+(x.doc||"")+(x.lead||"")).toLowerCase().includes(q)));
+}
+
+function tasks(){
  const col=ST.map(x=>x[1]);
- const rs=ROWS.filter(x=>x.m==m&&(!d||x.d==d)&&(s===""||x.st==s)&&(!q||((x.tx||"")+(x.doc||"")+(x.lead||"")).toLowerCase().includes(q)));
- el("tasks").innerHTML=`<tr><th>Phòng ban</th><th>Tuần</th><th>Nội dung / nhiệm vụ</th><th>Văn bản / chỉ đạo</th><th>Nguồn</th><th>Lãnh đạo</th><th>Hạn</th><th>Trạng thái</th><th>Dòng</th></tr>`+
- (rs.slice(0,300).map(x=>`<tr><td>${esc(x.d)}</td><td>${x.w}</td><td>${esc(x.tx||"(chưa nhập nội dung)")}</td><td>${esc(x.doc)}</td><td>${esc(x.src)}</td><td title="${esc(x.lead)}">${esc(x.lead)}</td><td>${esc(x.due)}</td><td><span class="tag" style="--c:${col[x.st]}">${ST[x.st][0]}</span></td><td>${x.r||""}</td></tr>`).join("")||`<tr><td colspan="9" style="text-align:center;color:var(--mu)">Không có công việc phù hợp</td></tr>`)+
- (rs.length>300?`<tr><td colspan="9" style="text-align:center;color:var(--mu)">Hiển thị 300/${rs.length} công việc – hãy lọc thêm</td></tr>`:"");
+ const rs=getFilteredTasks();
+ el("tasks").innerHTML=`<tr><th>Phòng ban</th><th>Tuần</th><th>Nội dung / nhiệm vụ</th><th>Văn bản / chỉ đạo</th><th>Nguồn</th><th>Lãnh đạo</th><th>Hạn</th><th>Trạng thái</th></tr>`+
+ (rs.slice(0,300).map(x=>`<tr><td>${esc(x.d)}</td><td>${x.w}</td><td>${esc(x.tx||"(chưa nhập nội dung)")}</td><td>${esc(x.doc)}</td><td>${esc(x.src)}</td><td title="${esc(x.lead)}">${esc(x.lead)}</td><td>${esc(x.due)}</td><td><span class="tag" style="--c:${col[x.st]}">${ST[x.st][0]}</span></td></tr>`).join("")||`<tr><td colspan="8" style="text-align:center;color:var(--mu)">Không có công việc phù hợp</td></tr>`)+
+ (rs.length>300?`<tr><td colspan="8" style="text-align:center;color:var(--mu)">Hiển thị 300/${rs.length} công việc – hãy lọc thêm</td></tr>`:"");
  updateStatus();
+}
+
+function exportTasksExcel(){
+ const rs=getFilteredTasks();
+ if(!rs.length){ alert("Không có dữ liệu phù hợp để xuất Excel!"); return; }
+ const m=el("month").value;
+ const d=el("dept").value || "Toan_phuong";
+ const s=el("st").value;
+ const stName=s==="" ? "Tat_ca_trang_thai" : ST[+s][0];
+ const slug=str=>str.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_|_$/g,"");
+ const fileName=`Cong_viec_T${m}_2026_${slug(d)}_${slug(stName)}.xlsx`;
+
+ const header=["STT","Phòng ban","Tuần","Nội dung / nhiệm vụ","Văn bản / chỉ đạo","Nguồn","Lãnh đạo","Hạn","Trạng thái"];
+ const aoa=[header].concat(rs.map((x,idx)=>[
+  idx+1, x.d||"", "Tuần "+x.w, x.tx||"", x.doc||"", x.src||"", x.lead||"", x.due||"", ST[x.st][0]
+ ]));
+
+ if(typeof XLSX !== "undefined"){
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"]=[{wch:6},{wch:22},{wch:10},{wch:50},{wch:24},{wch:18},{wch:20},{wch:14},{wch:20}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "CongViec_T"+m);
+  XLSX.writeFile(wb, fileName);
+ } else {
+  // Dự phòng xuất CSV UTF-8 BOM nếu mất mạng tải thư viện SheetJS
+  const csv="\uFEFF"+aoa.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=fileName.replace(/\.xlsx$/,".csv");
+  a.click();
+ }
 }
 
 const YEAR=2026,DAY=864e5,TODAY=new Date(new Date().setHours(0,0,0,0));
@@ -667,6 +732,8 @@ function lst(rs,id,empty){
 function xl(){
  const d=el("dept").value,m=+el("month").value,R=ROWS.filter(x=>(!d||x.d==d)&&x.m<=m),by=(a,b)=>(+pd(a.due)||1e15)-(+pd(b.due)||1e15),lim=+TODAY+7*DAY;
  const A=R.filter(x=>x.st==2).sort(by),S=R.filter(x=>x.st==3&&pd(x.due)&&+pd(x.due)>=+TODAY&&+pd(x.due)<=lim).sort(by),Q=R.filter(x=>x.st==3&&pd(x.due)&&+pd(x.due)<+TODAY).sort(by);
+ const deptTitle = d || "Toàn phường";
+ el("xlPrintHd").innerHTML=`<h2>DANH SÁCH NHIỆM VỤ CẦN XỬ LÝ – UBND PHƯỜNG PHÚ DIỄN</h2><p>Đơn vị: <b>${esc(deptTitle)}</b> · Luỹ kế tới tháng ${m}/${YEAR} · Ngày xuất: ${TODAY.toLocaleDateString('vi-VN')}</p>`;
  el("xlAh").textContent=`Chưa hoàn thành (quá hạn chưa giải quyết) – ${A.length} nhiệm vụ`;
  el("xlchips").innerHTML=DEPTS.map(k=>[k,A.filter(x=>x.d==k).length]).filter(c=>c[1]).map(c=>`<span class="chip">${esc(c[0])}: <b>${c[1]}</b></span>`).join("");
  el("xlSh").textContent=`Đang xử lý, đến hạn trong 7 ngày tới – ${S.length} nhiệm vụ`;
@@ -748,7 +815,10 @@ el("week").value = CURRENT_WEEK;
 el("week").onchange=()=>{el("week").dataset.u="1";repW()};
 el("month").onchange=()=>{el("week").dataset.u="";render()};
 el("cp").onclick=async()=>{try{await navigator.clipboard.writeText(el("rpt").innerText);el("cp").textContent="Đã sao chép ✓"}catch(e){el("cp").textContent="Không sao chép được"}setTimeout(()=>el("cp").textContent="Sao chép",1800)};
-el("pr").onclick=()=>window.print();
+el("pr").onclick=()=>{ document.body.classList.remove("print-xl"); window.print(); };
+el("prXl").onclick=()=>{ document.body.classList.add("print-xl"); window.print(); };
+window.addEventListener("afterprint", ()=> document.body.classList.remove("print-xl"));
+el("expExcel").onclick=exportTasksExcel;
 
 el("dept").onchange=render;el("st").onchange=tasks;el("q").oninput=tasks;
 el("reload").onclick=()=>init(true);
