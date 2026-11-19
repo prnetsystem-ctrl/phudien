@@ -98,28 +98,44 @@ th{color:var(--mu);font-weight:600;background:var(--bg)}
 th:first-child,td:first-child{text-align:left}
 tr.tot td{font-weight:700}
 
-/* Tùy chỉnh cột Tab Công việc được giao */
-#tasks th:nth-child(5), #tasks td:nth-child(5) { width: 10%; }
-#tasks th:nth-child(6), #tasks td:nth-child(6) { white-space: nowrap; width: 1%; }
-#tasks th:nth-child(7), #tasks td:nth-child(7) { white-space: nowrap; width: 1%; text-align: center; }
-#tasks th:nth-child(8), #tasks td:nth-child(8) { width: 10%; text-align: center; }
-#tasks th:nth-child(9), #tasks td:nth-child(9) { width: 5%; text-align: center; }
-#tasks td.l{text-align:left; min-width:200px; width: auto;}
+/* Cân đối tỷ lệ cột Tab Công việc được giao (vừa khít 1 màn hình) */
+#tasks { table-layout: fixed; width: 100%; }
+#tasks th:nth-child(1), #tasks td:nth-child(1) { width: 11%; text-align: left; }   /* Phòng ban */
+#tasks th:nth-child(2), #tasks td:nth-child(2) { width: 4%; text-align: center; }  /* Tuần */
+#tasks th:nth-child(3), #tasks td:nth-child(3) { width: 34%; text-align: left; }   /* Nội dung / nhiệm vụ */
+#tasks th:nth-child(4), #tasks td:nth-child(4) { width: 11%; text-align: left; }   /* Văn bản / chỉ đạo */
+#tasks th:nth-child(5), #tasks td:nth-child(5) { width: 9%; text-align: left; }    /* Nguồn */
+#tasks th:nth-child(6), #tasks td:nth-child(6) { width: 11%; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* Lãnh đạo */
+#tasks th:nth-child(7), #tasks td:nth-child(7) { width: 8%; text-align: center; white-space: nowrap; } /* Hạn */
+#tasks th:nth-child(8), #tasks td:nth-child(8) { width: 8%; text-align: center; }  /* Trạng thái */
+#tasks th:nth-child(9), #tasks td:nth-child(9) { width: 4%; text-align: center; }  /* Dòng */
 
-/* Tùy chỉnh cột Tab Cần xử lý */
+/* Cân đối tỷ lệ cột Tab Cần xử lý (vừa khít 1 màn hình) */
+#xlA, #xlS, #xlQ { table-layout: fixed; width: 100%; }
+#xlA th:nth-child(1), #xlA td:nth-child(1),
+#xlS th:nth-child(1), #xlS td:nth-child(1),
+#xlQ th:nth-child(1), #xlQ td:nth-child(1) { width: 11%; text-align: left; }       /* Phòng ban */
+#xlA th:nth-child(2), #xlA td:nth-child(2),
+#xlS th:nth-child(2), #xlS td:nth-child(2),
+#xlQ th:nth-child(2), #xlQ td:nth-child(2) { width: 8%; text-align: center; }      /* Tháng/Tuần */
 #xlA th:nth-child(3), #xlA td:nth-child(3),
 #xlS th:nth-child(3), #xlS td:nth-child(3),
-#xlQ th:nth-child(3), #xlQ td:nth-child(3) { min-width: 300px; width: auto; }
-
+#xlQ th:nth-child(3), #xlQ td:nth-child(3) { width: 35%; text-align: left; }       /* Nội dung */
+#xlA th:nth-child(4), #xlA td:nth-child(4),
+#xlS th:nth-child(4), #xlS td:nth-child(4),
+#xlQ th:nth-child(4), #xlQ td:nth-child(4) { width: 11%; text-align: left; }       /* Văn bản chỉ đạo */
 #xlA th:nth-child(5), #xlA td:nth-child(5),
 #xlS th:nth-child(5), #xlS td:nth-child(5),
-#xlQ th:nth-child(5), #xlQ td:nth-child(5) { white-space: nowrap; width: 1%; }
-
+#xlQ th:nth-child(5), #xlQ td:nth-child(5) { width: 11%; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* Lãnh đạo */
 #xlA th:nth-child(6), #xlA td:nth-child(6),
 #xlS th:nth-child(6), #xlS td:nth-child(6),
-#xlQ th:nth-child(6), #xlQ td:nth-child(6) { white-space: nowrap; width: 1%; text-align: center; }
-
-#xlA td.l, #xlS td.l, #xlQ td.l { text-align:left; min-width: 150px; }
+#xlQ th:nth-child(6), #xlQ td:nth-child(6) { width: 8%; text-align: center; white-space: nowrap; } /* Hạn */
+#xlA th:nth-child(7), #xlA td:nth-child(7),
+#xlS th:nth-child(7), #xlS td:nth-child(7),
+#xlQ th:nth-child(7), #xlQ td:nth-child(7) { width: 11%; text-align: left; }       /* Người thực hiện */
+#xlA th:nth-child(8), #xlA td:nth-child(8),
+#xlS th:nth-child(8), #xlS td:nth-child(8),
+#xlQ th:nth-child(8), #xlQ td:nth-child(8) { width: 5%; text-align: center; }      /* Dòng */
 
 .chart{display:flex;gap:12px;align-items:flex-end;height:170px;padding-top:8px}
 .col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end}
@@ -130,7 +146,7 @@ tr.tot td{font-weight:700}
 .leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
 .pb{height:8px;background:var(--bd);border-radius:4px;overflow:hidden;display:inline-block;width:70px;vertical-align:middle;margin-right:6px}
 .pb i{display:block;height:100%;background:var(--ok)}
-.tag{padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;background:var(--c);white-space:nowrap;}
+.tag{padding:2px 6px;border-radius:10px;font-size:11px;color:#fff;background:var(--c);white-space:nowrap;display:inline-block;}
 .hide{display:none !important;}
 .doc{background:#fff;color:#111;border:1px solid var(--bd);border-radius:10px;padding:28px 36px;font:14pt/1.5 "Times New Roman",serif;max-width:860px;margin:auto}
 .doc h4{text-align:center;margin:14px 0 4px;font-size:14pt;font-weight:bold;}
@@ -143,7 +159,32 @@ tr.tot td{font-weight:700}
 .status-bar {margin-bottom:15px; padding:8px 15px; background-color:#fff3e0; border-left:4px solid #ff9800; border-radius:4px; font-size:13px; color:#333; display:flex; align-items:center;}
 .status-bar span.dot {color:#ff9800; font-size:16px; margin-right:8px; line-height:1;}
 .chart-container { position: relative; height: 300px; width: 100%; }
-@media print{body *{visibility:hidden}#rpt,#rpt *{visibility:visible;display:block !important;}#rpt{position:absolute;left:0;top:0;width:100%;border:0}}
+
+/* Định dạng in / lưu PDF chuẩn A4, giữ nguyên 2 cột Tiêu ngữ & Chữ ký */
+@page { size: A4 portrait; margin: 20mm 15mm 20mm 25mm; }
+@media print {
+  html, body { background: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; }
+  header, .bar, #loginOverlay, #loadingOverlay, #msg, #statusBar, #ov, #tk, #lk, #xl, #rp > .card {
+    display: none !important;
+  }
+  main { padding: 0 !important; margin: 0 !important; max-width: 100% !important; min-height: 0 !important; }
+  #rp { display: block !important; }
+  #rpt {
+    display: block !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    font: 13pt/1.45 "Times New Roman", serif !important;
+    color: #000 !important;
+  }
+  #rpt .hd { display: flex !important; justify-content: space-between !important; align-items: flex-start !important; }
+  #rpt .sg { display: flex !important; justify-content: space-between !important; page-break-inside: avoid; }
+  #rpt p { page-break-inside: avoid; }
+}
 </style>
 </head>
 <body>
@@ -298,12 +339,11 @@ function updateStatus() {
     const timeStr = now.toLocaleTimeString('vi-VN') + ' ' + now.toLocaleDateString('vi-VN');
     const tabBtn = document.querySelector('.tabs button.on');
     const tabCode = tabBtn ? tabBtn.dataset.t : '';
-    const srcTag = DATA_SOURCE ? ` · Nguồn: <b>${DATA_SOURCE}</b>` : '';
     let text = "";
     const deptName = d || 'Toàn phường';
-    if (tabCode === 'ov') text = `Đang xem: <b>${deptName}</b> · trong <b>tháng ${m}</b> · Cập nhật lúc: ${timeStr}${srcTag}`;
-    else if (tabCode === 'lk') text = `Đang xem: <b>${deptName}</b> · luỹ kế tới <b>tháng ${m}</b> · Cập nhật lúc: ${timeStr}${srcTag}`;
-    else text = `Đang xem: <b>${deptName}</b> · ${tabBtn ? tabBtn.innerText : ''} · Cập nhật lúc: ${timeStr}${srcTag}`;
+    if (tabCode === 'ov') text = `Đang xem: <b>${deptName}</b> · trong <b>tháng ${m}</b> · Cập nhật lúc: ${timeStr}`;
+    else if (tabCode === 'lk') text = `Đang xem: <b>${deptName}</b> · luỹ kế tới <b>tháng ${m}</b> · Cập nhật lúc: ${timeStr}`;
+    else text = `Đang xem: <b>${deptName}</b> · ${tabBtn ? tabBtn.innerText : ''} · Cập nhật lúc: ${timeStr}`;
     el("statusText").innerHTML = text;
     el("statusBar").classList.remove("hide");
 }
@@ -437,10 +477,10 @@ async function loadLive(forceFresh = false){
   }catch(e){
    el("msg").className = "note";
    el("msg").classList.remove("hide");
-   el("msg").innerHTML = "<b>Cảnh báo:</b> Không lấy được dữ liệu từ Apps Script (" + e.message + "). Đang tạm dùng luồng CSV (số liệu sẽ bị ảnh hưởng nếu Sheet đang bật bộ lọc).";
+   el("msg").innerHTML = "<b>Cảnh báo:</b> Không lấy được dữ liệu từ Apps Script (" + e.message + "). Đang tạm dùng luồng CSV.";
   }
  }
- DATA_SOURCE = "CSV (dự phòng)";
+ DATA_SOURCE = "CSV";
  const fails=[]; let all=[];
  await Promise.all(TABS.map(async([name,tab])=>{
   try{
@@ -548,7 +588,7 @@ function tasks(){
  const col=ST.map(x=>x[1]);
  const rs=ROWS.filter(x=>x.m==m&&(!d||x.d==d)&&(s===""||x.st==s)&&(!q||((x.tx||"")+(x.doc||"")+(x.lead||"")).toLowerCase().includes(q)));
  el("tasks").innerHTML=`<tr><th>Phòng ban</th><th>Tuần</th><th>Nội dung / nhiệm vụ</th><th>Văn bản / chỉ đạo</th><th>Nguồn</th><th>Lãnh đạo</th><th>Hạn</th><th>Trạng thái</th><th>Dòng</th></tr>`+
- (rs.slice(0,300).map(x=>`<tr><td>${esc(x.d)}</td><td>${x.w}</td><td class="l">${esc(x.tx||"(chưa nhập nội dung)")}</td><td class="l">${esc(x.doc)}</td><td>${esc(x.src)}</td><td>${esc(x.lead)}</td><td style="text-align:center;">${esc(x.due)}</td><td style="text-align:center;"><span class="tag" style="--c:${col[x.st]}">${ST[x.st][0]}</span></td><td style="text-align:center;">${x.r||""}</td></tr>`).join("")||`<tr><td colspan="9" style="text-align:center;color:var(--mu)">Không có công việc phù hợp</td></tr>`)+
+ (rs.slice(0,300).map(x=>`<tr><td>${esc(x.d)}</td><td>${x.w}</td><td>${esc(x.tx||"(chưa nhập nội dung)")}</td><td>${esc(x.doc)}</td><td>${esc(x.src)}</td><td title="${esc(x.lead)}">${esc(x.lead)}</td><td>${esc(x.due)}</td><td><span class="tag" style="--c:${col[x.st]}">${ST[x.st][0]}</span></td><td>${x.r||""}</td></tr>`).join("")||`<tr><td colspan="9" style="text-align:center;color:var(--mu)">Không có công việc phù hợp</td></tr>`)+
  (rs.length>300?`<tr><td colspan="9" style="text-align:center;color:var(--mu)">Hiển thị 300/${rs.length} công việc – hãy lọc thêm</td></tr>`:"");
  updateStatus();
 }
@@ -575,19 +615,19 @@ function repW(){
 
   el("rpt").innerHTML=`
   <div class="hd" style="align-items:flex-start;">
-    <div style="width: 40%; text-align: center;">
-      <span style="font-size: 13pt;">UBND PHƯỜNG PHÚ DIỄN</span><br>
-      <strong style="font-size: 13pt; text-decoration: underline;">VĂN PHÒNG HĐND - UBND</strong><br>
-      <span style="font-size: 13pt;">Số: &nbsp;&nbsp;&nbsp;/BC-UBND</span>
+    <div style="width: 42%; text-align: center;">
+      <span style="font-size: 12.5pt;">UBND PHƯỜNG PHÚ DIỄN</span><br>
+      <strong style="font-size: 12.5pt; text-decoration: underline;">VĂN PHÒNG HĐND - UBND</strong><br>
+      <span style="font-size: 12.5pt;">Số: &nbsp;&nbsp;&nbsp;/BC-UBND</span>
     </div>
-    <div style="width: 60%; text-align: center;">
-      <strong style="font-size: 13pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</strong><br>
-      <strong style="font-size: 14pt; text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</strong><br>
-      <i style="font-size: 13pt;">Phú Diễn, ngày ${TODAY.getDate()} tháng ${TODAY.getMonth()+1} năm ${TODAY.getFullYear()}</i>
+    <div style="width: 58%; text-align: center;">
+      <strong style="font-size: 12.5pt;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</strong><br>
+      <strong style="font-size: 13pt; text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</strong><br>
+      <i style="font-size: 12.5pt;">Phú Diễn, ngày ${TODAY.getDate()} tháng ${TODAY.getMonth()+1} năm ${TODAY.getFullYear()}</i>
     </div>
   </div>
-  <h4 style="font-size:14pt; margin: 25px 0 10px;">BÁO CÁO</h4>
-  <p style="text-align:center; font-weight:bold; font-size:14pt; margin-top:0;">Tiến độ thực hiện nhiệm vụ được giao của các phòng chuyên môn, đơn vị thuộc UBND Phường tới tuần ${w}, tháng ${m}/${YEAR}</p>
+  <h4 style="font-size:14pt; margin: 20px 0 8px;">BÁO CÁO</h4>
+  <p style="text-align:center; font-weight:bold; font-size:13.5pt; margin-top:0;">Tiến độ thực hiện nhiệm vụ được giao của các phòng chuyên môn, đơn vị thuộc UBND Phường tới tuần ${w}, tháng ${m}/${YEAR}</p>
   <p>Thực hiện chỉ đạo của Chủ tịch UBND Phường tại các kết luận cuộc họp và văn bản chỉ đạo của các Sở, Ban, Ngành chuyển đến UBND Phường, Văn phòng HĐND-UBND Phường báo cáo tiến độ thực hiện như sau:</p>
   <p><b>I. Kết quả thực hiện nhiệm vụ của các phòng chuyên môn, đơn vị</b></p>
   <p><b>1. Kết quả chung của toàn phường:</b></p>
@@ -596,11 +636,11 @@ function repW(){
   ${act.map((c,i)=>`<p>${i+1}. <b>${esc(c.d)}</b> tới tuần ${w}/tháng ${m}: ${c.n} nhiệm vụ; ${c.o} nhiệm vụ tồn đọng của các tháng trước. Tổng cộng: ${c.t} nhiệm vụ. Trong đó:</p>${L(c)}`).join("")||"<p>Chưa có dữ liệu.</p>"}
   ${C.filter(c=>!c.t).length?`<p class="ind">Không phát sinh nhiệm vụ: ${C.filter(c=>!c.t).map(c=>esc(c.d)).join(", ")}.</p>`:""}
   <p><b>II. Nhận xét</b></p>${nx.map(s=>`<p class="ind">- ${s}</p>`).join("")}
-  <div class="sg" style="display:flex; justify-content:space-between; margin-top:30px;">
-    <div style="width:50%; font-size:11pt; font-style:italic; line-height:1.3; text-align:left;">
+  <div class="sg" style="display:flex; justify-content:space-between; margin-top:26px;">
+    <div style="width:52%; font-size:11pt; font-style:italic; line-height:1.35; text-align:left;">
       <b>Nơi nhận:</b><br>- TT Đảng uỷ phường (để b/c);<br>- Đ/c Chủ tịch, các PCT UBND Phường;<br>- Các phòng chuyên môn, đơn vị;<br>- Lưu: VT.
     </div>
-    <div style="width:50%; text-align:center; font-size:13pt;">
+    <div style="width:48%; text-align:center; font-size:13pt;">
       <b>CHÁNH VĂN PHÒNG</b><br><br><br><br><br><b>(Đã ký)</b>
     </div>
   </div>`;
@@ -610,7 +650,7 @@ function repW(){
 function lst(rs,id,empty){
  const n=rs.length; rs=rs.slice(0,200);
  el(id).innerHTML=`<tr><th>Phòng ban</th><th>Tháng/Tuần</th><th>Nội dung</th><th>Văn bản chỉ đạo</th><th>Lãnh đạo</th><th>Hạn</th><th>Người thực hiện</th><th>Dòng</th></tr>`+
- (rs.map(x=>`<tr><td>${esc(x.d)}</td><td>T${x.m}/Tuần ${x.w}</td><td class="l">${esc(x.tx||"(chưa nhập nội dung)")}</td><td class="l">${esc(x.doc)}</td><td>${esc(x.lead)}</td><td style="text-align:center;">${esc(x.due)}</td><td class="l">${esc(x.gc)}</td><td style="text-align:center;">${x.r||""}</td></tr>`).join("")||`<tr><td colspan="8" style="text-align:center;color:var(--mu)">${empty}</td></tr>`)+
+ (rs.map(x=>`<tr><td>${esc(x.d)}</td><td>T${x.m}/Tuần ${x.w}</td><td>${esc(x.tx||"(chưa nhập nội dung)")}</td><td>${esc(x.doc)}</td><td title="${esc(x.lead)}">${esc(x.lead)}</td><td>${esc(x.due)}</td><td>${esc(x.gc)}</td><td>${x.r||""}</td></tr>`).join("")||`<tr><td colspan="8" style="text-align:center;color:var(--mu)">${empty}</td></tr>`)+
  (n>200?`<tr><td colspan="8" style="text-align:center;color:var(--mu)">Hiển thị 200/${n} – hãy lọc theo phòng</td></tr>`:"")}
 
 function xl(){
@@ -635,7 +675,6 @@ async function init(forceFresh = false){
     const parsed = JSON.parse(saved);
     if (Array.isArray(parsed) && parsed.length > 0) {
      ROWS = parsed;
-     DATA_SOURCE = "Bộ nhớ đệm (đang đồng bộ...)";
      build();
      if (!el("month").dataset.inited) {
       el("month").value = new Date().getMonth() + 1;
