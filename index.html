@@ -249,7 +249,7 @@ tr.tot td{font-weight:700}
 <script>
 const SHEET_ID="10vl4JuyRYwhOmWMa2Ddp-RBO48NWF4oWC84g73_QyvU";
 const API_URL="https://script.google.com/macros/s/AKfycbwNcvRLqYC7sNJWAwEQl-cWNfNicmemudcSxdR7dZkya0s8duFNMOjppsTUgUgPEi66fA/exec";
-const CACHE_KEY="PD_DASHBOARD_CACHE_2026";
+const CACHE_KEY="PD_DASHBOARD_CACHE_2026_V4";
 
 const TABS=[
   ["Phòng HT-ĐT-MT", "1. Phòng HT-ĐT-MT"],
@@ -268,7 +268,7 @@ const ST=[["Hoàn thành","var(--ok)"],["Hoàn thành quá hạn","var(--late)"]
 const SRC=["Sở, ban, ngành","Thành phố","Thành uỷ","Trung ương","Đảng uỷ","Các đơn vị khác"];
 const FLOW=[["CV","Công văn"],["XLVB","Phiếu XLVB"],["TKL","Theo kết luận"],["CTCT","CT công tác"]];
 const DEPTS=TABS.map(t=>t[0]);
-let ROWS=[],DATA={};
+let ROWS=[],DATA={},DATA_SOURCE="";
 
 const el=id=>document.getElementById(id);
 const sum=a=>a.reduce((x,y)=>x+y,0);
@@ -298,11 +298,12 @@ function updateStatus() {
     const timeStr = now.toLocaleTimeString('vi-VN') + ' ' + now.toLocaleDateString('vi-VN');
     const tabBtn = document.querySelector('.tabs button.on');
     const tabCode = tabBtn ? tabBtn.dataset.t : '';
+    const srcTag = DATA_SOURCE ? ` · Nguồn: <b>${DATA_SOURCE}</b>` : '';
     let text = "";
     const deptName = d || 'Toàn phường';
-    if (tabCode === 'ov') text = `Đang xem: <b>${deptName}</b> · trong <b>tháng ${m}</b> · Cập nhật lúc: ${timeStr}`;
-    else if (tabCode === 'lk') text = `Đang xem: <b>${deptName}</b> · luỹ kế tới <b>tháng ${m}</b> · Cập nhật lúc: ${timeStr}`;
-    else text = `Đang xem: <b>${deptName}</b> · ${tabBtn ? tabBtn.innerText : ''} · Cập nhật lúc: ${timeStr}`;
+    if (tabCode === 'ov') text = `Đang xem: <b>${deptName}</b> · trong <b>tháng ${m}</b> · Cập nhật lúc: ${timeStr}${srcTag}`;
+    else if (tabCode === 'lk') text = `Đang xem: <b>${deptName}</b> · luỹ kế tới <b>tháng ${m}</b> · Cập nhật lúc: ${timeStr}${srcTag}`;
+    else text = `Đang xem: <b>${deptName}</b> · ${tabBtn ? tabBtn.innerText : ''} · Cập nhật lúc: ${timeStr}${srcTag}`;
     el("statusText").innerHTML = text;
     el("statusBar").classList.remove("hide");
 }
@@ -367,6 +368,7 @@ function rowsFromCSV(dept,csv){
               let h = colHeaders[j];
               if (h.includes(nkw)) {
                   if (nkw === "số" && h.includes("thứ tự")) continue;
+                  if (nkw === "tháng" && h.includes("ngày")) continue;
                   return j;
               }
           }
@@ -374,10 +376,10 @@ function rowsFromCSV(dept,csv){
       return def;
   };
 
-  const leadIdx = findCol(["lãnh đạo chỉ đạo", "lãnh đạo phụ trách", "lãnh đạo"], 11);
+  const leadIdx = findCol(["lãnh đạo phụ trách", "lãnh đạo chỉ đạo", "lãnh đạo"], 12);
   const dueIdx = findCol(
-      ["ngày phải thực hiện xong", "phải thực hiện xong", "ngày phải hoàn thành", "thời hạn hoàn thành", "thời hạn", "hạn xử lý", "hạn hoàn thành", "hạn"],
-      leadIdx === 12 ? 13 : 12,
+      ["ngày phải thực hiện xong", "phải thực hiện xong", "ngày phải hoàn thành", "thời hạn hoàn thành", "thời hạn", "hạn"],
+      14,
       leadIdx
   );
 
@@ -385,29 +387,30 @@ function rowsFromCSV(dept,csv){
       st: findCol(["trạng thái"], 1),
       mo: findCol(["tháng"], 4),
       wk: findCol(["tuần"], 5),
-      tx: findCol(["nội dung công việc", "nội dung", "ý kiến", "nhiệm vụ"], 6),
-      doc: findCol(["số công văn/văn bản", "số công văn", "công văn/văn bản", "số, ký hiệu", "số/ký hiệu", "số văn bản", "số cv", "ký hiệu"], 7),
-      src: findCol(["nguồn giao việc", "nguồn"], 8),
-      flow: findCol(["loại luồng", "luồng"], 9),
+      tx: findCol(["nội dung/ nhiệm vụ", "nội dung công việc", "nội dung", "nhiệm vụ"], 6),
+      doc: findCol(["số công văn/văn bản", "số công văn", "công văn/văn bản", "số, ký hiệu", "số/ký hiệu", "số văn bản"], 8),
+      src: findCol(["nguồn giao việc", "nguồn"], 9),
+      flow: findCol(["phân loại luồng", "loại luồng", "luồng"], 10),
       lead: leadIdx,
       due: dueIdx,
-      kq: findCol(["tiến độ", "kết quả"], 14),
-      nh: findCol(["ngày hoàn thành", "ngày ht"], 15),
-      ly: findCol(["lý do chưa hoàn thành", "lý do"], 16),
-      gc: findCol(["người thực hiện", "chuyên viên", "ghi chú"], 17)
+      kq: findCol(["tiến độ công việc", "tiến độ", "kết quả"], 16),
+      nh: findCol(["ngày hoàn thành", "ngày ht"], 17),
+      ly: findCol(["lý do chưa hoàn thành", "lý do"], 18),
+      gc: findCol(["chuyên viên thực hiện", "người thực hiện", "chuyên viên", "ghi chú"], 13)
   };
 
   const out = [];
   rows.forEach((r, i) => {
       if (i <= endHeader) return;
-      const moStr = String(r[dC.mo] || "").trim();
-      let moMatch = /tháng\s*(\d+)/i.exec(moStr);
+      const moStr = cleanStr(r[dC.mo]);
+      let moMatch = /tháng\s*(\d+)/.exec(moStr);
+      if (!moMatch) moMatch = /^t(\d{1,2})$/.exec(moStr);
       if (!moMatch && /^\d{1,2}$/.test(moStr)) moMatch = [moStr, moStr];
       const st = normSt(r[dC.st]);
       const tx = String(r[dC.tx] || "").trim();
 
       if (!moMatch || st < 0 || tx.length < 2) return;
-      const wkStr = String(r[dC.wk] || "").trim();
+      const wkStr = cleanStr(r[dC.wk]);
       let wkMatch = /(\d+)/.exec(wkStr);
       const w = Math.min(5, Math.max(1, wkMatch ? parseInt(wkMatch[1]) : 1));
       out.push({
@@ -427,12 +430,17 @@ async function loadLive(forceFresh = false){
    if(!res.ok) throw new Error("HTTP " + res.status);
    const j = await res.json();
    if(j && Array.isArray(j.rows) && j.rows.length > 0){
+    DATA_SOURCE = "Apps Script";
     return {all: j.rows, fails: j.missing || []};
    }
+   throw new Error("Apps Script trả về 0 dòng");
   }catch(e){
-   console.warn("Lỗi kết nối Apps Script, chuyển sang CSV:", e);
+   el("msg").className = "note";
+   el("msg").classList.remove("hide");
+   el("msg").innerHTML = "<b>Cảnh báo:</b> Không lấy được dữ liệu từ Apps Script (" + e.message + "). Đang tạm dùng luồng CSV (số liệu sẽ bị ảnh hưởng nếu Sheet đang bật bộ lọc).";
   }
  }
+ DATA_SOURCE = "CSV (dự phòng)";
  const fails=[]; let all=[];
  await Promise.all(TABS.map(async([name,tab])=>{
   try{
@@ -627,6 +635,7 @@ async function init(forceFresh = false){
     const parsed = JSON.parse(saved);
     if (Array.isArray(parsed) && parsed.length > 0) {
      ROWS = parsed;
+     DATA_SOURCE = "Bộ nhớ đệm (đang đồng bộ...)";
      build();
      if (!el("month").dataset.inited) {
       el("month").value = new Date().getMonth() + 1;
@@ -634,7 +643,6 @@ async function init(forceFresh = false){
      }
      render();
      el("loadingOverlay").style.display = "none";
-     el("statusText").innerHTML += ' · <span style="color:#1e4fa3;font-weight:600">↻ Đang đồng bộ dữ liệu mới nhất...</span>';
      hasCache = true;
     }
    }
@@ -647,9 +655,12 @@ async function init(forceFresh = false){
   const {all, fails} = await loadLive(forceFresh);
   if(all.length > 0){
    ROWS = all;
-   try { localStorage.setItem(CACHE_KEY, JSON.stringify(all)); } catch (e) {}
+   if (DATA_SOURCE === "Apps Script") {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(all)); } catch (e) {}
+   }
    if(fails.length > 0) {
     el("msg").className = "note";
+    el("msg").classList.remove("hide");
     el("msg").innerHTML = "<b>Không đọc được dữ liệu của:</b> " + fails.join(", ");
    }
    build();
@@ -661,6 +672,7 @@ async function init(forceFresh = false){
   } else if (!hasCache) {
    ROWS = [];
    el("msg").className = "note";
+   el("msg").classList.remove("hide");
    el("msg").innerHTML = "<b>Lỗi không lấy được dữ liệu:</b> Kiểm tra lại đường link Apps Script (API_URL) hoặc quyền chia sẻ công khai của file Google Sheet.";
    build();
    render();
@@ -669,6 +681,7 @@ async function init(forceFresh = false){
   console.error(err);
   if (!hasCache) {
    el("msg").className = "note";
+   el("msg").classList.remove("hide");
    el("msg").innerHTML = "<b>Lỗi kết nối:</b> Không thể tải dữ liệu từ máy chủ.";
   }
  } finally {
