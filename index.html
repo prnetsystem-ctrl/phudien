@@ -253,7 +253,6 @@ function rowsFromCSV(dept,csv){
   const rows = parseCSV(csv);
   if (!rows.length) return [];
 
-  // 1. Xác định dòng tiêu đề chính trong 12 dòng đầu
   let headerIdx = 0, maxMatches = 0;
   for(let i=0; i<Math.min(12, rows.length); i++) {
      let rowStr = cleanStr(rows[i].join(" "));
@@ -270,7 +269,6 @@ function rowsFromCSV(dept,csv){
      }
   }
 
-  // 2. Gom text tiêu đề nhiều dòng (xử lý trường hợp gộp ô / tiêu đề 2 dòng)
   let endHeader = headerIdx;
   if (headerIdx + 1 < rows.length) {
       const nextStr = cleanStr(rows[headerIdx + 1].join(" "));
@@ -289,7 +287,6 @@ function rowsFromCSV(dept,csv){
       colHeaders[c] = parts.join(" ");
   }
 
-  // 3. Quét từ khóa ưu tiên trên toàn bộ cột đã chuẩn hóa NFC, có hỗ trợ loại trừ cột trùng
   const findCol = (keywords, def, excludeIdx = -1) => {
       for (let kw of keywords) {
           let nkw = cleanStr(kw);
@@ -306,7 +303,6 @@ function rowsFromCSV(dept,csv){
   };
 
   const leadIdx = findCol(["lãnh đạo chỉ đạo", "lãnh đạo phụ trách", "lãnh đạo"], 11);
-  // Ưu tiên tuyệt đối cụm "ngày phải thực hiện xong" / "phải thực hiện xong" và cấm trùng cột Lãnh đạo
   const dueIdx = findCol(
       ["ngày phải thực hiện xong", "phải thực hiện xong", "ngày phải hoàn thành", "thời hạn hoàn thành", "thời hạn", "hạn xử lý", "hạn hoàn thành", "hạn"],
       leadIdx === 12 ? 13 : 12,
@@ -525,9 +521,9 @@ function repW(){
 
 function lst(rs,id,empty){
  const n=rs.length; rs=rs.slice(0,200);
- el(id).innerHTML=`<tr><th>Phòng ban</th><th>Tháng/Tuần</th><th>Nội dung</th><th>Văn bản chỉ đạo</th><th>Lãnh đạo</th><th>Hạn</th><th>Lý do chưa hoàn thành</th><th>Người thực hiện</th><th>Dòng</th></tr>`+
- (rs.map(x=>`<tr><td>${esc(x.d)}</td><td>T${x.m}/Tuần ${x.w}</td><td class="l">${esc(x.tx||"(chưa nhập nội dung)")}</td><td class="l">${esc(x.doc)}</td><td>${esc(x.lead)}</td><td style="text-align:center;">${esc(x.due)}</td><td class="l">${esc(x.ly)}</td><td class="l">${esc(x.gc)}</td><td style="text-align:center;">${x.r||""}</td></tr>`).join("")||`<tr><td colspan="9" style="text-align:center;color:var(--mu)">${empty}</td></tr>`)+
- (n>200?`<tr><td colspan="9" style="text-align:center;color:var(--mu)">Hiển thị 200/${n} – hãy lọc theo phòng</td></tr>`:"")}
+ el(id).innerHTML=`<tr><th>Phòng ban</th><th>Tháng/Tuần</th><th>Nội dung</th><th>Văn bản chỉ đạo</th><th>Lãnh đạo</th><th>Hạn</th><th>Người thực hiện</th><th>Dòng</th></tr>`+
+ (rs.map(x=>`<tr><td>${esc(x.d)}</td><td>T${x.m}/Tuần ${x.w}</td><td class="l">${esc(x.tx||"(chưa nhập nội dung)")}</td><td class="l">${esc(x.doc)}</td><td>${esc(x.lead)}</td><td style="text-align:center;">${esc(x.due)}</td><td class="l">${esc(x.gc)}</td><td style="text-align:center;">${x.r||""}</td></tr>`).join("")||`<tr><td colspan="8" style="text-align:center;color:var(--mu)">${empty}</td></tr>`)+
+ (n>200?`<tr><td colspan="8" style="text-align:center;color:var(--mu)">Hiển thị 200/${n} – hãy lọc theo phòng</td></tr>`:"")}
 
 function xl(){
  const d=el("dept").value,m=+el("month").value,R=ROWS.filter(x=>(!d||x.d==d)&&x.m<=m),by=(a,b)=>(+pd(a.due)||1e15)-(+pd(b.due)||1e15),lim=+TODAY+7*DAY;
